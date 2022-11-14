@@ -5,33 +5,30 @@ class Operator():
 class Connective(Operator):
     def __init__(self):
         super().__init__()
-        self.operator = None;
-        self.is_connective = True;
+        self.operator = None
+        self.is_connective = True
 
-class And(Connective):
+class Conjunction(Connective):
     def __init__(self):
         super().__init__()
-        self.operator = "&";
+        self.operator = "&"
     
-class Or(Connective):
+class Disjunction(Connective):
     def __init__(self):
         super().__init__()
-        self.operator = "|";
+        self.operator = "|"
 
-class Not(Operator):
+class Negation(Operator):
     def __init__(self):
         super().__init__()
         self.operator = "!"
 
-class Implies(Connective):
+class Implication(Connective):
     def __init__(self):
         super().__init__()
         self.operator = ">"
 
-class Equiv(Connective):
+class Equivalence(Connective):
     def __init__(self):
         super().__init__()
         self.operator = "="
-    
-
-    
