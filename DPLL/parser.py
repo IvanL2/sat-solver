@@ -1,7 +1,7 @@
 from tree import Tree
 from operators import *
 
-precedence = {'¬': 1, '∧': 2, '∨': 3, '→': 4, '↔': 5}
+precedence = {'¬': 5, '∧': 4, '∨': 3, '→': 2, '↔': 1}
 equiv_symbols = {" ":"","<->":"↔","->":"→","~":"¬","\/":"∨","/\\":"∧","&":"∧","|":"∨","!":"¬"}
 class Parser:
 
@@ -29,7 +29,9 @@ class Parser:
         newexp = exp
         for x in equiv_symbols.keys():
             newexp = newexp.replace(x,equiv_symbols[x])
+        print(newexp)
         postfix = infixconverter.infixToPostfix(newexp)
+        print(postfix)
         arguments = []
         for x in postfix:
             if x == "¬":
@@ -71,7 +73,7 @@ class Parser:
                 tree.set_right(node1)
                 arguments.append(tree)
             else:
-                arguments.append(x)
+                arguments.append(Variable(x))
         final_tree = arguments.pop()
         return final_tree
         
@@ -164,3 +166,7 @@ class Conversion:
         while not self.isEmpty():
             self.output.append(self.pop())
         return "".join(self.output)
+
+class Variable:
+    def __init__(self, name):
+        self.name = name
