@@ -2,7 +2,7 @@ from tree import Tree
 from operators import *
 
 precedence = {'¬': 1, '∧': 2, '∨': 3, '→': 4, '↔': 5}
-
+equiv_symbols = {" ":"","<->":"↔","->":"→","~":"¬","\/":"∨","/\\":"∧","&":"∧","|":"∨","!":"¬"}
 class Parser:
 
     global precedence
@@ -10,6 +10,8 @@ class Parser:
         pass
     
     def print_tree(self,tree : Tree, depth : int):
+        if (depth==0):
+            print("format: node, depth")
         print(tree.get_root().operator,depth)
         if hasattr(tree.get_left(), "is_tree"):
             self.print_tree(tree.get_left(), depth + 1)
@@ -24,13 +26,12 @@ class Parser:
 
     def parse(self, exp : str) -> Tree:
         infixconverter = Conversion()
-        postfix = infixconverter.infixToPostfix(exp)
-        print(postfix)
-        operator_symbols = precedence.keys()
-        depth = 0
+        newexp = exp
+        for x in equiv_symbols.keys():
+            newexp = newexp.replace(x,equiv_symbols[x])
+        postfix = infixconverter.infixToPostfix(newexp)
         arguments = []
         for x in postfix:
-            print("arguments",arguments,"operator",x)
             if x == "¬":
                 node = arguments.pop()
                 tree = Tree()
@@ -163,6 +164,4 @@ class Conversion:
         while not self.isEmpty():
             self.output.append(self.pop())
         return "".join(self.output)
-
-
-Parser().parse("(¬(a∨b)→(c∧d))↔p")
+Parser().parse("(¬(a\/b)->(c/\d))<->p")
