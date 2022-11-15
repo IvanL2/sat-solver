@@ -16,12 +16,12 @@ class Parser:
         if hasattr(tree.get_left(), "is_tree"):
             self.print_tree(tree.get_left(), depth + 1)
         else:
-            print(tree.get_left(),depth+1)
+            print(tree.get_left().name,depth+1)
         if hasattr(tree.get_right(), "is_tree"):
             self.print_tree(tree.get_right(), depth + 1)
         else:
             if (tree.get_root().operator != "!"):
-                print(tree.get_right(),depth+1)
+                print(tree.get_right().name,depth+1)
         
 
     def parse(self, exp : str) -> Tree:
