@@ -29,9 +29,7 @@ class Parser:
         newexp = exp
         for x in equiv_symbols.keys():
             newexp = newexp.replace(x,equiv_symbols[x])
-        print(newexp)
         postfix = infixconverter.infixToPostfix(newexp)
-        print(postfix)
         arguments = []
         for x in postfix:
             if x == "¬":
