@@ -43,37 +43,37 @@ class Parser:
                 node2 = arguments.pop()
                 tree = Tree()
                 tree.set_root(Conjunction())
-                tree.set_left(node1)
-                tree.set_right(node2)
+                tree.set_left(node2)
+                tree.set_right(node1)
                 arguments.append(tree)
             elif x == "∨":
                 node1 = arguments.pop()
                 node2 = arguments.pop()
                 tree = Tree()
                 tree.set_root(Disjunction())
-                tree.set_left(node1)
-                tree.set_right(node2)
+                tree.set_left(node2)
+                tree.set_right(node1)
                 arguments.append(tree)
             elif x == "→":
                 node1 = arguments.pop()
                 node2 = arguments.pop()
                 tree = Tree()
                 tree.set_root(Implication())
-                tree.set_left(node1)
-                tree.set_right(node2)
+                tree.set_left(node2)
+                tree.set_right(node1)
                 arguments.append(tree)
             elif x == "↔":
                 node1 = arguments.pop()
                 node2 = arguments.pop()
                 tree = Tree()
                 tree.set_root(Equivalence())
-                tree.set_left(node1)
-                tree.set_right(node2)
+                tree.set_left(node2)
+                tree.set_right(node1)
                 arguments.append(tree)
             else:
                 arguments.append(x)
         final_tree = arguments.pop()
-        self.print_tree(final_tree,0)
+        return final_tree
         
             
 
@@ -164,4 +164,3 @@ class Conversion:
         while not self.isEmpty():
             self.output.append(self.pop())
         return "".join(self.output)
-Parser().parse("(¬(a\/b)->(c/\d))<->p")

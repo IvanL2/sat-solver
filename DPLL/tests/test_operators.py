@@ -12,48 +12,48 @@ def test_operators():
     assert connective.is_connective == True
 
     try:
-        from operators import Or
+        from operators import Disjunction
     except NameError:
         assert False
 
-    connective = Or()
+    connective = Disjunction()
     assert connective.operator == "|"
     assert connective.is_connective == True
 
     try:
-        from operators import And
+        from operators import Conjunction
     except NameError:
         assert False
 
-    connective = And()
+    connective = Conjunction()
     assert connective.operator == "&"
     assert connective.is_connective == True
 
     try:
-        from operators import Implies
+        from operators import Implication
     except NameError:
         assert False
 
-    connective = Implies()
+    connective = Implication()
     assert connective.operator == ">"
     assert connective.is_connective == True
 
 
     try:
-        from operators import Equiv
+        from operators import Equivalence
     except NameError:
         assert False
 
-    connective = Equiv()
+    connective = Equivalence()
     assert connective.operator == "="
     assert connective.is_connective == True
 
     try:
-        from operators import Not
+        from operators import Negation
     except NameError:
         assert False
 
-    operator = Not()
+    operator = Negation()
     assert operator.operator == "!"
     assert operator.is_operator == True
 
