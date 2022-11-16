@@ -1,8 +1,9 @@
 from tree import Tree
 from operators import *
+from constants import Tautology, Contradiction
 
 precedence = {'¬': 5, '∧': 4, '∨': 3, '→': 2, '↔': 1}
-equiv_symbols = {" ":"","<->":"↔","->":"→","~":"¬","\/":"∨","/\\":"∧","&":"∧","|":"∨","!":"¬"}
+equiv_symbols = {" ":"","<->":"↔","->":"→","~":"¬","\/":"∨","/\\":"∧","&":"∧","|":"∨","!":"¬","F":"⊥","T":"⊤"}
 class Parser:
 
     global precedence
@@ -70,6 +71,10 @@ class Parser:
                 tree.set_left(node2)
                 tree.set_right(node1)
                 arguments.append(tree)
+            elif x == "⊤":
+                arguments.append(Tautology())
+            elif x == "⊥":
+                arguments.append(Contradiction())
             else:
                 arguments.append(Variable(x))
         final_tree = arguments.pop()
