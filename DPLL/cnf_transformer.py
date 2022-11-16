@@ -76,8 +76,7 @@ class Transformer:
     def naming(self, tree: Tree) -> set:
         newtree = tree
         self._add_depth(newtree,0)
-        p = Polarity()
-        p.polarise(newtree,pol=1)
+        Polarity.polarise(newtree,pol=1)
         clauses = set()
         numberofnames = 0
         while (self._get_highest_depth(newtree) > 2):
@@ -164,24 +163,22 @@ class Transformer:
             return 0
 
 class Polarity:
-    def __init__(self):
-        pass
 
-    def polarise(self, node : Tree, pol=1) -> Tree:
+    def polarise(node : Tree, pol=1) -> Tree:
         node.pol = pol
         if isinstance(node, Variable) or isinstance(node, Constant):
             return None
         if isinstance(node.get_root(), Disjunction) or isinstance(node.get_root(), Conjunction):
-            self.polarise(node.get_left(), pol=pol)
-            self.polarise(node.get_right(), pol=pol)
+            Polarity.polarise(node.get_left(), pol=pol)
+            Polarity.polarise(node.get_right(), pol=pol)
         elif isinstance(node.get_root(), Negation):
-            self.polarise(node.get_left(), pol=-pol)
+            Polarity.polarise(node.get_left(), pol=-pol)
         elif isinstance(node.get_root(), Implication):
-            self.polarise(node.get_left(), pol=-pol)
-            self.polarise(node.get_right(), pol=pol)
+            Polarity.polarise(node.get_left(), pol=-pol)
+            Polarity.polarise(node.get_right(), pol=pol)
         elif isinstance(node.get_root(), Equivalence):
-            self.polarise(node.get_left(), pol=0)
-            self.polarise(node.get_right(), pol=0)
+            Polarity.polarise(node.get_left(), pol=0)
+            Polarity.polarise(node.get_right(), pol=0)
 
 class _Equivalence_Rules:
 
@@ -214,9 +211,6 @@ class _Equivalence_Rules:
         tree.set_left(temptree)
 
     def disjunction(tree : Tree):
-        from parser import Parser
-        p = Parser()
-        p.print_tree(tree)
         if not isinstance(tree, Tree):
             return None
         if isinstance(tree.get_left(), Tree):

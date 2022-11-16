@@ -28,3 +28,7 @@ class Tree():
     
     def set_right(self,right):
         self.right = right
+
+class Variable:
+    def __init__(self, name):
+        self.name = name

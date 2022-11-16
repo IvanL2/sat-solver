@@ -1,16 +1,14 @@
-from tree import Tree
+from tree import Tree, Variable
 from operators import *
-from constants import Tautology, Contradiction
+from constants import Tautology, Contradiction, Constant
 
 precedence = {'¬': 5, '∧': 4, '∨': 3, '→': 2, '↔': 1}
 equiv_symbols = {" ":"","<->":"↔","->":"→","~":"¬","\/":"∨","/\\":"∧","&":"∧","|":"∨","!":"¬","F":"⊥","T":"⊤"}
 class Parser:
 
     global precedence
-    def __init__(self):
-        pass
     
-    def print_tree(self,tree : Tree, depth=0):
+    def print_tree(tree : Tree, depth=0):
         if (depth==0):
             print("format: node, depth")
         if not isinstance(tree, Tree):
@@ -18,17 +16,17 @@ class Parser:
             return None
         print(tree.get_root().operator, depth)
         if hasattr(tree.get_left(), "is_tree"):
-            self.print_tree(tree.get_left(), depth + 1)
+            Parser.print_tree(tree.get_left(), depth + 1)
         else:
             print(tree.get_left().name,depth+1)
         if hasattr(tree.get_right(), "is_tree"):
-            self.print_tree(tree.get_right(), depth + 1)
+            Parser.print_tree(tree.get_right(), depth + 1)
         else:
             if (tree.get_root().operator != "!"):
                 print(tree.get_right().name,depth+1)
         
 
-    def parse(self, exp : str) -> Tree:
+    def parse(exp : str) -> Tree:
         infixconverter = Conversion()
         newexp = exp
         for x in equiv_symbols.keys():
@@ -83,7 +81,12 @@ class Parser:
         final_tree = arguments.pop()
         return final_tree
         
-            
+    def tree_to_infix(tree : Tree) -> str:
+        string = ""
+        if (isinstance(tree, Tree)):
+            return Parser.tree_to_infix(tree.get_left()) + tree.get_root().operator + Parser.tree_to_infix(tree.get_right())
+        else:
+            return tree.name
 
 # CREDIT TO https://www.geeksforgeeks.org/convert-infix-expression-to-postfix-expression/
 class Conversion:
@@ -172,7 +175,3 @@ class Conversion:
         while not self.isEmpty():
             self.output.append(self.pop())
         return "".join(self.output)
-
-class Variable:
-    def __init__(self, name):
-        self.name = name
