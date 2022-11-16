@@ -1,6 +1,7 @@
 from tree import Tree
 from parser import Variable
 from operators import *
+from constants import Constant
 
 class Transformer:
     def __init__(self):
@@ -168,7 +169,7 @@ class Polarity:
 
     def polarise(self, node : Tree, pol=1) -> Tree:
         node.pol = pol
-        if isinstance(node, Variable):
+        if isinstance(node, Variable) or isinstance(node, Constant):
             return None
         if isinstance(node.get_root(), Disjunction) or isinstance(node.get_root(), Conjunction):
             self.polarise(node.get_left(), pol=pol)
@@ -213,17 +214,17 @@ class _Equivalence_Rules:
         tree.set_left(temptree)
 
     def disjunction(tree : Tree):
+        from parser import Parser
+        p = Parser()
+        p.print_tree(tree)
         if not isinstance(tree, Tree):
             return None
-        if isinstance(tree.get_left(), Conjunction):
+        if isinstance(tree.get_left(), Tree):
             l = tree.get_left()
             r = tree.get_right()
-        elif isinstance(tree.get_right(), Conjunction):
+        elif isinstance(tree.get_right(), Tree):
             l = tree.get_right()
             r = tree.get_left()
-        else:
-            l = tree.get_left()
-            r = tree.get_right()
         a = l.get_left()
         b = l.get_right()
         c = r
