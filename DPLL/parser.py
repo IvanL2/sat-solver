@@ -10,10 +10,13 @@ class Parser:
     def __init__(self):
         pass
     
-    def print_tree(self,tree : Tree, depth : int):
+    def print_tree(self,tree : Tree, depth=0):
         if (depth==0):
             print("format: node, depth")
-        print(tree.get_root().operator,depth)
+        if not isinstance(tree, Tree):
+            print(tree.name, "Sole variable")
+            return None
+        print(tree.get_root().operator, depth)
         if hasattr(tree.get_left(), "is_tree"):
             self.print_tree(tree.get_left(), depth + 1)
         else:
