@@ -8,7 +8,8 @@ cnf_transformer.Transformer   takes an AST and by using equivalence rules rewrit
 
 pure_literal_eliminator.Eliminator   Uses pure literal elimination to optimise number of clauses.
 
-Todo:   Unit Propagation to implement DPLL unit propagation to finalise results.
-        Tautology elimination (i.e. T \/ p)
-        fix any parsing bugs
-        fix cnf producing invalid clauses
+### Todo:
+- Unit Propagation to implement DPLL unit propagation to finalise results.
+- Tautology elimination (i.e. T \/ p)
+- fix any parsing bugs
+- fix cnf producing invalid clauses
