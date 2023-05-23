@@ -1,34 +1,19 @@
 class Tree():
-    def __init__(self):
-        self.left = None
-        self.right = None
-        self.root = None
-        self.is_tree = True
-    def is_tree(self):
-        return True
-    
-    def get_root(self):
-        return self.root
-    
-    def get_left(self):
-        return self.left
-    
-    def get_right(self):
-        return self.right
-    
-    def set_nodes(self,left,right):
-        right.left = left
-        self.right = right
-    
-    def set_root(self,root):
-        self.root = root
-
-    def set_left(self,left):
+    """Typical tree data structure, with parent information"""
+    def __init__(self, value, parent=None, left=None, right=None):
+        self.parent = parent
         self.left = left
-    
-    def set_right(self,right):
+        if self.left != None:
+            self.left.parent = self
         self.right = right
+        if self.right != None:
+            self.right.parent = self
+        self.value = value
 
-class Variable:
-    def __init__(self, name):
-        self.name = name
+    def get_height(tree):
+        arr = [0]
+        if tree.left != None:
+            arr.append(tree.right.get_height(tree.left))
+        if tree.right != None:
+            arr.append(tree.right.get_height(tree.right))
+        return 1+max(arr)

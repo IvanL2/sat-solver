@@ -1,6 +1,5 @@
-from tree import Tree, Variable
-from operators import *
-from constants import Tautology, Contradiction, Constant
+from tree import *
+from semantics import *
 
 precedence = {'¬': 5, '∧': 4, '∨': 3, '→': 2, '↔': 1}
 equiv_symbols = {" ":"","<->":"↔","->":"→","~":"¬","\/":"∨","/\\":"∧","&":"∧","|":"∨","!":"¬","F":"⊥","T":"⊤"}
@@ -11,19 +10,17 @@ class Parser:
     def print_tree(tree : Tree, depth=0):
         if (depth==0):
             print("format: node, depth")
-        if not isinstance(tree, Tree):
-            print(tree.name, "Sole variable")
-            return None
-        print(tree.get_root().operator, depth)
-        if hasattr(tree.get_left(), "is_tree"):
-            Parser.print_tree(tree.get_left(), depth + 1)
+        if (tree == None):
+            return
+        if (tree.value == "start"):
+            print("start",0)
         else:
-            print(tree.get_left().name,depth+1)
-        if hasattr(tree.get_right(), "is_tree"):
-            Parser.print_tree(tree.get_right(), depth + 1)
-        else:
-            if (tree.get_root().operator != "!"):
-                print(tree.get_right().name,depth+1)
+            print(tree.value.name, depth)
+        if (isinstance(tree.value, Variable) and not isinstance(tree.value, Operator)):
+            return
+        Parser.print_tree(tree.left, depth + 1)
+        Parser.print_tree(tree.right, depth + 1)
+        
         
 
     def parse(exp : str) -> Tree:
@@ -36,57 +33,47 @@ class Parser:
         for x in postfix:
             if x == "¬":
                 node = arguments.pop()
-                tree = Tree()
-                tree.set_root(Negation())
-                tree.set_left(node)
+                tree = Tree(Operator.Negation(), left=node)
                 arguments.append(tree)
             elif x == "∧":
                 node1 = arguments.pop()
                 node2 = arguments.pop()
-                tree = Tree()
-                tree.set_root(Conjunction())
-                tree.set_left(node2)
-                tree.set_right(node1)
+                tree = Tree(Connective.Conjunction(), left=node2, right=node1)
                 arguments.append(tree)
             elif x == "∨":
                 node1 = arguments.pop()
                 node2 = arguments.pop()
-                tree = Tree()
-                tree.set_root(Disjunction())
-                tree.set_left(node2)
-                tree.set_right(node1)
+                tree = Tree(Connective.Disjunction(), left=node2, right=node1)
                 arguments.append(tree)
             elif x == "→":
                 node1 = arguments.pop()
                 node2 = arguments.pop()
-                tree = Tree()
-                tree.set_root(Implication())
-                tree.set_left(node2)
-                tree.set_right(node1)
+                tree = Tree(Connective.Implication(), left=node2, right=node1)
                 arguments.append(tree)
             elif x == "↔":
                 node1 = arguments.pop()
                 node2 = arguments.pop()
-                tree = Tree()
-                tree.set_root(Equivalence())
-                tree.set_left(node2)
-                tree.set_right(node1)
+                tree = Tree(Connective.Equivalence(), left=node2, right=node1)
                 arguments.append(tree)
             elif x == "⊤":
-                arguments.append(Tautology())
+                tree = Tree(Tautology())
+                arguments.append(tree)
             elif x == "⊥":
-                arguments.append(Contradiction())
+                tree = Tree(Contradiction())
+                arguments.append(tree)
             else:
-                arguments.append(Variable(x))
-        final_tree = arguments.pop()
+                tree = Tree(Variable(x))
+                arguments.append(tree)
+        final_tree = Tree("start", left=arguments.pop())
         return final_tree
+
         
     def tree_to_infix(tree : Tree) -> str:
         string = ""
         if (isinstance(tree, Tree)):
-            return Parser.tree_to_infix(tree.get_left()) + tree.get_root().operator + Parser.tree_to_infix(tree.get_right())
+            return Parser.tree_to_infix(tree.left) + tree.value + Parser.tree_to_infix(tree.right)
         else:
-            return tree.name
+            return tree.value
 
 # CREDIT TO https://www.geeksforgeeks.org/convert-infix-expression-to-postfix-expression/
 class Conversion:
