@@ -9,9 +9,9 @@ class Transformer:
             print("Error: No semantics attached to tree. Please call semantics() in DPLL first!")
         named_clauses = []
         Transformer.naming(tree=tree, clauses=named_clauses)
+        named_clauses.append(tree)
         clauses = set()
         for x in named_clauses:
-            #Parser.print_tree(x)
             Transformer.generate_clauses(x, clauses)
         return clauses
     
@@ -119,12 +119,26 @@ class Transformer:
             Transformer.double_neg_remove(currenttree.right)
     
     def dnf_to_cnf(tree: Tree):
-        if tree.left != None:
-            Transformer.dnf_to_cnf(tree.left)
-        if tree.right != None:
-            Transformer.dnf_to_cnf(tree.right)
+        modified = False
+        # This is really ugly, but it works
+        parent_tree_direction_to_current_tree = "left" if tree.parent != None and tree.parent.left == tree else "right"
         if isinstance(tree.value, Operator) and tree.value.name == "|":
-            if isinstance(tree.right.value, Operator) and tree.left.value.name == "&":
+            if isinstance(tree.right.value, Operator) and (tree.left.value.name == "&") and isinstance(tree.right.value, Operator) and tree.right.value.name == "&":
+                #(A n B) v (C n D) => [(A v C) n (A v D)] n [(B v C) n (B v D)]
+                a_v_c = Tree(Connective.Disjunction(), left=copy.deepcopy(tree.left.left), right=copy.deepcopy(tree.right.left))
+                a_v_d = Tree(Connective.Disjunction(), left=copy.deepcopy(tree.left.left), right=copy.deepcopy(tree.right.right))
+                b_v_c = Tree(Connective.Disjunction(), left=copy.deepcopy(tree.left.right), right=copy.deepcopy(tree.right.left))
+                b_v_d = Tree(Connective.Disjunction(), left=copy.deepcopy(tree.left.right), right=copy.deepcopy(tree.right.right))
+                left = Tree(Connective.Conjunction(), left=a_v_c, right=a_v_d)
+                right = Tree(Connective.Conjunction(), left=b_v_c, right=b_v_d)
+                final = Tree(Connective.Conjunction(), left=left, right=right)
+                final.parent = tree.parent
+                if tree.parent.left == tree:
+                    tree.parent.left = final
+                else:
+                    tree.parent.right = final
+                modified = True
+            elif isinstance(tree.left.value, Operator) and tree.left.value.name == "&":
                 # CNF within DNF detected
                 # (A n B) v C => (A v C) n (B v C)
                 a_v_c = Tree(Connective.Disjunction(), left=copy.deepcopy(tree.left.left), right=copy.deepcopy(tree.right))
@@ -135,7 +149,8 @@ class Transformer:
                     tree.parent.left = final
                 else:
                     tree.parent.right = final
-            if isinstance(tree.right.value, Operator) and tree.right.value.name == "&":
+                modified = True
+            elif isinstance(tree.right.value, Operator) and tree.right.value.name == "&":
                 # CNF within DNF detected
                 # A v (B n C) => (A v B) n (A v C)
                 a_v_b = Tree(Connective.Disjunction(), left=copy.deepcopy(tree.left), right=copy.deepcopy(tree.right.left))
@@ -146,7 +161,26 @@ class Transformer:
                     tree.parent.left = final
                 else:
                     tree.parent.right = final
-        
+                modified = True
+        newtree = tree if tree.parent == None else tree.parent.left if (parent_tree_direction_to_current_tree == "left") else tree.parent.right
+        if newtree.left != None:
+            # If any child tree was changed, then need to check entire tree again
+            if Transformer.dnf_to_cnf(newtree.left): Transformer.dnf_to_cnf(newtree)
+        if newtree.right != None:
+            if Transformer.dnf_to_cnf(newtree.right): Transformer.dnf_to_cnf(newtree)
+        # At this point, all child nodes should've been checked, and up to this point
+        # everything is in CNF, but might fail at parent if anything changed, hence return modified.
+        return modified
+    
+    def split_conjunctions(tree: Tree, clauses: set):
+        if tree.value == "start":
+            Transformer.split_conjunctions(tree.left, clauses)
+            return
+        if isinstance(tree.value, Operator) and tree.value.name == "&":
+            Transformer.split_conjunctions(tree.left, clauses)
+            Transformer.split_conjunctions(tree.right, clauses)
+        else:
+            clauses.add(tree)
 
     def generate_clauses(tree : Tree, clauses: set) -> set:
         """
@@ -157,23 +191,12 @@ class Transformer:
         5) Transform any DNFs left into CNFs
         6) Split CNF into clauses
         """
-        print("ORIGINAL")
-        Parser.print_tree(tree)
         Transformer.replace_equivs(tree)
-        #print("STAGE 1 RESULT")
-        #Parser.print_tree(tree)
         Transformer.replace_implics(tree)
-        print("STAGE 2 RESULT")
-        Parser.print_tree(tree)
         Transformer.push_negations(tree)
-        print("STAGE 3 RESULT")
-        Parser.print_tree(tree)
         Transformer.double_neg_remove(tree)
-        print("STAGE 4 RESULT")
-        Parser.print_tree(tree)
         Transformer.dnf_to_cnf(tree)
-        print("NEW")
-        Parser.print_tree(tree)
+        Transformer.split_conjunctions(tree, clauses)
 
     # Post-order traversal to name from bottom up
     def naming(tree: Tree, clauses: list):
@@ -184,7 +207,6 @@ class Transformer:
 
         if isinstance(tree.value, Operator):
             newvar = Variable("n"+str(len(clauses)))
-            connective = Connective.Equivalence()
             if tree.pol == 1:
                 clauses.append(Tree("start",left=Tree(
                             Connective.Implication(),
@@ -193,10 +215,13 @@ class Transformer:
                 clauses.append(Tree("start",left=Tree(
                             Connective.Equivalence(),
                             left=Tree(newvar),right=copy.deepcopy(tree))))
-            else:
+            elif tree.pol == -1:
                 clauses.append(Tree("start",left=Tree(
                             Connective.Implication(),
                             left=copy.deepcopy(tree),right=Tree(newvar))))
+            else:
+                print("ERROR")
+                raise RuntimeError()
             parent = tree.parent
             if parent.left == tree:
                 parent.left = Tree(newvar)

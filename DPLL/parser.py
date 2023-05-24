@@ -2,7 +2,8 @@ from tree import *
 from semantics import *
 
 precedence = {'¬': 5, '∧': 4, '∨': 3, '→': 2, '↔': 1}
-equiv_symbols = {" ":"","<->":"↔","->":"→","~":"¬","\/":"∨","/\\":"∧","&":"∧","|":"∨","!":"¬","F":"⊥","T":"⊤"}
+equiv_symbols = {" ":"","<->":"↔","=":"↔","->":"→","~":"¬","\/":"∨","/\\":"∧","&":"∧","|":"∨","!":"¬","F":"⊥","T":"⊤"}
+internal_symbol_to_icon = {">":"→", "=":"↔", "!":"¬", "&":"∧", "|":"∨"}
 class Parser:
 
     global precedence
@@ -20,8 +21,30 @@ class Parser:
             return
         Parser.print_tree(tree.left, depth + 1)
         Parser.print_tree(tree.right, depth + 1)
-        
-        
+    
+    def print_exp(tree: Tree, first=True):
+        if (tree.value == "start"):
+            Parser.print_exp(tree.left)
+            return
+        if not isinstance(tree.value, Connective):
+            if (tree.value.name == "!"):
+                print("¬", end="")
+            else:
+                print(tree.value.name, end="")
+            if tree.left != None:
+                Parser.print_exp(tree.left, first=False)
+        else:
+            print("(", end="")
+            if tree.left != None:
+                Parser.print_exp(tree.left, first=False)
+            if tree.value.name in internal_symbol_to_icon:
+                print(internal_symbol_to_icon[tree.value.name], end="")
+            else:
+                print(tree.value.name, end="")
+            if (tree.right != None):
+                Parser.print_exp(tree.right, first=False)
+            print(")", end="")
+        if first: print()
 
     def parse(exp : str) -> Tree:
         infixconverter = Conversion()

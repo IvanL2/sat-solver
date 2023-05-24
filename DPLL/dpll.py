@@ -12,12 +12,19 @@ def add_semantics(ast: Tree):
 
 def dpll(exp):
     parsed = Parser.parse(exp)
+    Parser.print_exp(parsed)
     add_semantics(parsed)
     clauses = Transformer.transform(parsed)
+    print(f"RESULT FOR {exp}")
+    for x in clauses:
+        Parser.print_exp(x)
 
 example_bad = "(a <-> b) -> c"
 example = "((p <-> ~q) -> r) -> r /\~p"
 example2 = "((a/\\b)\\/c)"
 example3 ="((a -> b) & (c <-> d)) \\/ p & T"
-
-sat = dpll(example_bad)
+example4 = "a /\ ¬a"
+sat = dpll(example4)
+dpll(example)
+dpll(example2)
+dpll(example3)
