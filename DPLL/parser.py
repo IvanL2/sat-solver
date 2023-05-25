@@ -50,6 +50,8 @@ class Parser:
         for x in equiv_symbols.keys():
             newexp = newexp.replace(x,equiv_symbols[x])
         postfix = infixconverter.infixToPostfix(newexp)
+        if len(postfix) == 0:
+            raise RuntimeError("Empty expression received.")
         arguments = []
         for x in postfix:
             if x == "¬":
@@ -175,8 +177,9 @@ class Conversion:
   
             # An operator is encountered
             else:
-                while(not self.isEmpty() and self.notGreater(i)):
-                    self.output.append(self.pop())
+                if i != "¬":    # ad hoc fix
+                    while(not self.isEmpty() and self.notGreater(i)):
+                        self.output.append(self.pop())
                 self.push(i)
   
         # pop all the operator from the stack
