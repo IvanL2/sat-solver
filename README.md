@@ -6,10 +6,10 @@ Implementations of different SAT Solving algorithms learned from my course at th
 ### (Intended) Usage
 
 #### DPLL (see example.py for example)
+```
 from dpll import dpll
 dpll("your prop. logic expr") -> bool (True if satisfiable, False otherwise)
-[TODO: Add actual solver]
-
+```
 ### TODO:
 - Add syntax check
 
