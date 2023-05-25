@@ -5,16 +5,12 @@ Implementations of different SAT Solving algorithms learned from my course at th
 
 ### (Intended) Usage
 
-#### DPLL (see dpll.py for example)
-Parser.parse("your expression") to produce an AST; structure defined in tree.py
-Semantics.polarise(AST) to add polarity information to each node
-Transformer(polarised AST) to produce a set of clauses (in CNF-SAT)
+#### DPLL (see example.py for example)
+from dpll import dpll
+dpll("your prop. logic expr") -> bool (True if satisfiable, False otherwise)
 [TODO: Add actual solver]
 
 ### TODO:
-- Fix DNF -> CNF implementation
-- Fix solver
-- Create pipeline wrapper for everything
 - Add syntax check
 
 # License
