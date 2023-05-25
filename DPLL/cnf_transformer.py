@@ -5,9 +5,8 @@ from semantics import *
 
 class Transformer:
     def transform(tree : Tree):
-        if not hasattr(tree, "semantics"):
-            print("Error: No semantics attached to tree. Please call semantics() in DPLL first!")
         named_clauses = []
+        Semantics.polarise(tree)
         Transformer.naming(tree=tree, clauses=named_clauses)
         named_clauses.append(tree)
         clauses = set()

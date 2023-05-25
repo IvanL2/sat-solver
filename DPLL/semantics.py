@@ -23,17 +23,17 @@ class Semantics:
         if ast.value == "start":
             Semantics.literal_marker(ast.left)
             return
-        # Leaf node
-        if ast.left == None and ast.right == None:
-            ast.literal = True # all leaf nodes are literals for correct parse tree
-            return
         # If not a negation (is and, or, implies, equiv)
-        if ast.value.name != "!":
+        if isinstance(ast.value, Connective) and ast.value.name != "!":
             ast.literal = False # then clearly not a literal
-        elif isinstance(ast.left.value, Operator):
+        elif not isinstance(ast.value, Operator):
+            ast.literal = True
+            return
+        elif isinstance(ast.left.value, Operator) and ast.left.value.name == "!":
             ast.literal = False
         else:
             ast.literal = True
+            return
         if ast.left != None:
             Semantics.literal_marker(ast.left)
         if ast.right != None:
@@ -43,6 +43,9 @@ class Semantics:
 class Variable():
     def __init__(self, name):
         self.name = name
+    
+    def __str__(self):
+        return f"<Variable {self.name}>"
 
 class Tautology(Variable):
     def __init__(self):
@@ -57,6 +60,9 @@ class Operator():
         self.name = name
         self.is_operator = True
     
+    def __str__(self):
+        return f"<Operator {self.name}>"
+
     def Negation():
         return Operator("!")
 

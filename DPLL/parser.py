@@ -2,11 +2,9 @@ from tree import *
 from semantics import *
 
 precedence = {'¬': 5, '∧': 4, '∨': 3, '→': 2, '↔': 1}
-equiv_symbols = {" ":"","<->":"↔","=":"↔","->":"→","~":"¬","\/":"∨","/\\":"∧","&":"∧","|":"∨","!":"¬","F":"⊥","T":"⊤"}
+equiv_symbols = {" ":"","<->":"↔","=":"↔","->":"→","~":"¬","\/":"∨","v":"∨", "n":"∧","/\\":"∧","&":"∧","|":"∨","!":"¬","F":"⊥","T":"⊤"}
 internal_symbol_to_icon = {">":"→", "=":"↔", "!":"¬", "&":"∧", "|":"∨"}
 class Parser:
-
-    global precedence
     
     def print_tree(tree : Tree, depth=0):
         if (depth==0):
@@ -135,7 +133,7 @@ class Conversion:
     # A utility function to check is the given character
     # is operand
     def isOperand(self, ch):
-        return ch.isalpha()
+        return ch.isalpha() or ch == "⊥" or ch == "⊤"
   
     # Check if the precedence of operator is strictly
     # less than top of stack or not
