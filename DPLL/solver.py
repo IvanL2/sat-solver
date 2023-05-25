@@ -32,6 +32,7 @@ class Solver:
         return literals
 
     def transform_to_variables(tree: Tree) -> Set[Tuple[str, bool]]:
+        Semantics.literal_marker(tree)
         tree_literals = Solver.get_literals(tree)
         vars = set()
         for x in tree_literals:
@@ -112,7 +113,6 @@ class Solver:
     def solve(old_clauses) -> bool:
         clauses = list()
         for x in old_clauses:
-            Semantics.literal_marker(x)
             vars = Solver.transform_to_variables(x)
             clauses.append(vars)
         Solver.contra_elim(clauses) # Didn't check for Bottom in parser/transformer, so do it now.
