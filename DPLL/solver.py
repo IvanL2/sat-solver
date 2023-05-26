@@ -110,13 +110,14 @@ class Solver:
                     raise RuntimeError()
         return uniques
 
-    def solve(old_clauses) -> bool:
+    def solve(old_clauses) -> Tuple[bool, List[Tuple[str, bool]]]:
+        """Returns a tuple in the form (True/False if Satisfiable/Unsat, [list of variables that form the model if sat, else None])"""
         clauses = list()
         for x in old_clauses:
             vars = Solver.transform_to_variables(x)
             clauses.append(vars)
         Solver.contra_elim(clauses) # Didn't check for Bottom in parser/transformer, so do it now.
-
+        model = []
         while True:
             unique_var_names = Solver.get_unique_names(clauses)
             if len(unique_var_names) == 0:
@@ -127,13 +128,15 @@ class Solver:
             if len(unit_clauses) > 0:
                 # Propagate unit clause
                 var = next(iter(unit_clauses[0]))
+                model.append(var)
                 Solver.propagate(clauses, var)
             else:
                 var = next(iter(unique_var_names))
+                model.append(var)
                 newset = set()
                 newset.add(var)
                 clauses.append(newset)
                 Solver.propagate(clauses, var)
             if set() in clauses:
-                return False
-        return len(clauses) == 0
+                return (False, None)
+        return (len(clauses) == 0, model)

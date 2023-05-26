@@ -1,5 +1,6 @@
 from tree import *
 from semantics import *
+from typing import Set
 
 precedence = {'¬': 5, '∧': 4, '∨': 3, '→': 2, '↔': 1}
 equiv_symbols = {" ":"","<->":"↔","=":"↔","->":"→","~":"¬","\/":"∨","v":"∨", "n":"∧","/\\":"∧","&":"∧","|":"∨","!":"¬","F":"⊥","T":"⊤"}
@@ -43,6 +44,16 @@ class Parser:
                 Parser.print_exp(tree.right, first=False)
             print(")", end="")
         if first: print()
+    
+    def get_variable_names(tree: Tree) -> Set[str]:
+        if tree.left == None and tree.right == None:
+            return {tree.value.name}
+        names = set()
+        if tree.left != None:
+            names = names.union(Parser.get_variable_names(tree.left))
+        if tree.right != None:
+            names = names.union(Parser.get_variable_names(tree.right))
+        return names
 
     def parse(exp : str) -> Tree:
         infixconverter = Conversion()

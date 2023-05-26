@@ -1,4 +1,4 @@
-from dpll import dpll
+from dpll import dpll, dpll_model
 
 
 example = "((p <-> ~q) -> r) -> r /\~p"
@@ -6,8 +6,8 @@ example2 = "((a/\\b)\\/c)"
 example3 ="((a -> b) & (c <-> d)) v p n T"
 example4 = "(a <-> b) -> c"
 
-print(f"EXPRESSION: {example}, RESULT: {'SAT' if dpll(example) else 'UNSAT'}, EXPECTED: SAT")
-
+print(f"EXPRESSION: {example3}, RESULT: {'SAT' if dpll(example3) else 'UNSAT'}, EXPECTED: SAT")
+print(f"MODEL: {dpll_model(example3)}")
 
 # If interested in submodules
 
