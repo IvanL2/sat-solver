@@ -14,5 +14,9 @@ def dpll_model(exp: str) -> Tuple[bool, List[Tuple[str, bool]]]:
     parsed = Parser.parse(exp)
     original_vars = Parser.get_variable_names(parsed)
     clauses = Transformer.transform(parsed)
-    model_with_names = Solver.solve(clauses)[1]
-    return list(filter(lambda x: (x[0] in original_vars) and (x[0] != "⊤") and (x[0] != "⊥"), model_with_names))
+    solution = Solver.solve(clauses)
+    if solution[0]:
+        model_with_names = solution[1]
+        return list(filter(lambda x: (x[0] in original_vars) and (x[0] != "⊤") and (x[0] != "⊥"), model_with_names))
+    else:
+        return None

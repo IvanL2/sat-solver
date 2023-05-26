@@ -139,4 +139,4 @@ class Solver:
                 Solver.propagate(clauses, var)
             if set() in clauses:
                 return (False, None)
-        return (len(clauses) == 0, model)
+        return (len(clauses) == 0, None if len(clauses) != 0 else model)
