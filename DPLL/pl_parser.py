@@ -1,5 +1,5 @@
-from tree import *
-from semantics import *
+from .tree import *
+from .semantics import *
 from typing import Set
 
 precedence = {'¬': 5, '∧': 4, '∨': 3, '→': 2, '↔': 1}

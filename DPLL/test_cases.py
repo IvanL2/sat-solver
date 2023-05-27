@@ -1,4 +1,4 @@
-from dpll import dpll
+from .dpll import dpll
 
 example4 = "(a <-> b) -> c"
 example = "((p <-> ~q) -> r) -> r /\~p"
@@ -8,6 +8,7 @@ example_unsat1 = "a /\ ¬a"
 example_unsat2 = "(x \/ x \/ x) /\ (¬x \/ ¬x \/ ¬x)"
 example_unsat3 = "(x v y v z) n (x v y v ¬z) n (x v ¬y v z) n (x v ¬y v ¬z) n (¬x v y v z) n (¬x v y v ¬x) n (¬x v ¬y v z) n (¬x v ¬y v ¬z)"
 example_unsat4 = "b /\ c /\ c /\ c /\ ¬b /\ c"
+example_unsat5 = "¬((p → q) ∧ (p ∧ q → r ) → (p → r ))"
 example_f = "F"
 example_t = "T"
 example_t2 = "T /\ a"

@@ -1,8 +1,8 @@
-from cnf_transformer import Transformer
-from parser import Parser
-from solver import Solver
-from tree import Tree
-from semantics import *
+from .cnf_transformer import Transformer
+from .pl_parser import Parser
+from .solver import Solver
+from .tree import Tree
+from .semantics import *
 from typing import Tuple, List
 
 def dpll(exp: str) -> Tuple[bool, List[Tuple[str, bool]]]:

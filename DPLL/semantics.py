@@ -1,4 +1,4 @@
-from tree import Tree
+from .tree import Tree
 class Semantics:
     def polarise(node : Tree, pol=1) -> Tree:
         if (node.value == "start"):

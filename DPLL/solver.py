@@ -1,6 +1,6 @@
-from semantics import *
-from parser import Parser
-from tree import Tree
+from .semantics import *
+from .pl_parser import Parser
+from .tree import Tree
 from typing import Set, List, Tuple
 
 class Solver:

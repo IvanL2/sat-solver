@@ -1,7 +1,7 @@
-from tree import Tree
-from parser import Parser
+from .tree import Tree
+from .pl_parser import Parser
+from .semantics import *
 import copy
-from semantics import *
 
 class Transformer:
     def transform(tree : Tree):
