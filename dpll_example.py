@@ -3,17 +3,17 @@ from DPLL.dpll import dpll, dpll_model
 
 example = "((p <-> ~q) -> r) -> r /\~p"
 example2 = "((a/\\b)\\/c)"
-example3 ="((a -> b) & (c <-> d)) v p n T"
+example3 ="((a -> b) & (c <-> d)) | p & T"
 example4 = "(a <-> b) -> c"
 
 print(f"EXPRESSION: {example3}, RESULT: {'SAT' if dpll(example3) else 'UNSAT'}, EXPECTED: SAT")
 print(f"MODEL: {dpll_model(example3)}")
 
-print(dpll_model("a n ¬a"))
+print(dpll_model("a \/ ¬a"))
 
 # If interested in submodules
 
-from DPLL.parser import Parser
+from DPLL.pl_parser import Parser
 
 ast = Parser.parse(example) # ast short for abstract syntax tree
 Parser.print_exp(ast)       # Takes a tree and prints a reconstructed expression

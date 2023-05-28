@@ -115,7 +115,7 @@ class Solver:
                     raise RuntimeError()
         return uniques
 
-    def solve(old_clauses, verbose: False) -> Tuple[bool, List[Tuple[str, bool]]]:
+    def solve(old_clauses, verbose: bool=False) -> Tuple[bool, List[Tuple[str, bool]]]:
         """Returns a tuple in the form (True/False if Satisfiable/Unsat, [list of variables that form the model if sat, else None])"""
         clauses = list()
         for x in old_clauses:
