@@ -59,7 +59,7 @@ class Solver:
         if verbose: print("End propagation round")
 
 
-    def pure_literal_elim(clauses: list, unique_var_names: set, verbose: bool=False):
+    def pure_literal_elim(clauses: list, unique_var_names: set, verbose: bool=False) -> List[Tuple[str, bool]]:
         pure_literals = []
         for var in unique_var_names:
             clauses_as_list = [list(clause) for clause in clauses] # clause is a set
@@ -81,8 +81,9 @@ class Solver:
                        x.remove(pure)
                        x.add(("T", True))
                        break
+        return pure_literals
 
-    def taut_elim(clauses: list, verbose: bool=False):
+    def taut_elim(clauses: list, verbose: bool=False) -> List[Tuple[str, bool]]:
         to_remove = []
         for x in clauses:
             for y in x:
@@ -96,6 +97,7 @@ class Solver:
         for x in to_remove:
             if verbose: print("Removed tautology:", x)
             clauses.remove(x)
+        return to_remove
     
     def contra_elim(clauses: list):
         for x in clauses:
@@ -125,12 +127,12 @@ class Solver:
         model = []
         if verbose:
             print("Solver original list of clauses:"," ".join([str(x) for x in clauses]))
-        while True:    
+        while True:
             unique_var_names = Solver.get_unique_names(clauses)
             if len(unique_var_names) == 0:
                 break
-            Solver.pure_literal_elim(clauses, unique_var_names, verbose)
-            Solver.taut_elim(clauses, verbose)
+            model += [list(x) for x in Solver.pure_literal_elim(clauses, unique_var_names, verbose)]
+            model += [list(x) for x in Solver.taut_elim(clauses, verbose)]
             unit_clauses = list(filter(lambda c: len(c)==1, clauses))
             if len(unit_clauses) > 0:
                 # Propagate unit clause

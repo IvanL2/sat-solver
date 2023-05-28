@@ -9,7 +9,7 @@ example4 = "(a <-> b) -> c"
 print(f"EXPRESSION: {example3}, RESULT: {'SAT' if dpll(example3) else 'UNSAT'}, EXPECTED: SAT")
 print(f"MODEL: {dpll_model(example3)}")
 
-print(dpll_model("a \/ ¬a"))
+print(dpll_model("a \/ ¬a", verbose=True))
 
 # If interested in submodules
 
