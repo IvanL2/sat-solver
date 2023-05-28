@@ -5,19 +5,25 @@ from .tree import Tree
 from .semantics import *
 from typing import Tuple, List
 
-def dpll(exp: str) -> bool:
+def dpll(exp: str, verbose=False) -> bool:
     """Returns True if the given expression is satisfiable, False if unsatisfiable."""
-    parsed = Parser.parse(exp)
-    clauses = Transformer.transform(parsed)
-    return Solver.solve(clauses)[0]
+    if verbose: print("========== PARSER START ==========")
+    parsed = Parser.parse(exp, verbose)
+    if verbose: print("========== TRANSFORM START ==========")
+    clauses = Transformer.transform(parsed, verbose)
+    if verbose: print("========== SOLVER START ==========")
+    return Solver.solve(clauses, verbose)[0]
 
-def dpll_model(exp: str) -> List[Tuple[str, bool]]:
+def dpll_model(exp: str, verbose=False) -> List[Tuple[str, bool]]:
     """Returns a (maybe partial) model if satisfiable, None if unsatisfiable.
     This means that it may return an empty list [], if the given expression is a tautology."""
-    parsed = Parser.parse(exp)
+    if verbose: print("========== PARSER START ==========")
+    parsed = Parser.parse(exp, verbose)
     original_vars = Parser.get_variable_names(parsed)
-    clauses = Transformer.transform(parsed)
-    solution = Solver.solve(clauses)
+    if verbose: print("========== TRANSFORM START ==========")
+    clauses = Transformer.transform(parsed, verbose)
+    if verbose: print("========== SOLVER START ==========")
+    solution = Solver.solve(clauses, verbose)
     if solution[0]:
         model_with_names = solution[1]
         return list(filter(lambda x: (x[0] in original_vars) and (x[0] != "⊤") and (x[0] != "⊥"), model_with_names))

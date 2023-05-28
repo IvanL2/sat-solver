@@ -1,17 +1,29 @@
+from typing import List, Set
 from .tree import Tree
 from .pl_parser import Parser
 from .semantics import *
 import copy
 
 class Transformer:
-    def transform(tree : Tree):
+    def transform(tree : Tree, verbose: bool=False):
         named_clauses = []
         Semantics.polarise(tree)
-        Transformer.naming(tree=tree, clauses=named_clauses)
+        names = set()
+        Transformer.get_names(tree, names)
+        if verbose: print("Added polarity information to tree.")
+        Transformer.naming(tree=tree, clauses=named_clauses, set_of_names=names)
         named_clauses.append(tree)
+        if verbose:
+            print(f"Applied naming algorithm (Tseytin transformation).\nResulting clauses:")
+            for x in named_clauses:
+                Parser.print_exp(x)
         clauses = set()
         for x in named_clauses:
             Transformer.generate_clauses(x, clauses)
+        if verbose:
+            print(f"Transformed into CNF:")
+            for x in clauses:
+                Parser.print_exp(x)
         return clauses
     
     def replace_equivs(tree: Tree):
@@ -197,15 +209,28 @@ class Transformer:
         Transformer.dnf_to_cnf(tree)
         Transformer.split_conjunctions(tree, clauses)
 
-    # Post-order traversal to name from bottom up
-    def naming(tree: Tree, clauses: list):
+    def get_names(tree: Tree, names: set):
         if tree.left != None:
-            Transformer.naming(tree.left, clauses)
+            Transformer.get_names(tree.left, names)
         if tree.right != None:
-            Transformer.naming(tree.right, clauses)
+            Transformer.get_names(tree.right, names)
+        if tree.left == None and tree.right == None:
+            names.add(tree.value.name)
+    
+    # Post-order traversal to name from bottom up
+    def naming(tree: Tree, clauses: list, set_of_names: set):
+        if tree.left != None:
+            Transformer.naming(tree.left, clauses, set_of_names)
+        if tree.right != None:
+            Transformer.naming(tree.right, clauses, set_of_names)
 
         if isinstance(tree.value, Operator):
-            newvar = Variable("n"+str(len(clauses)))
+            newvar ="n"+str(len(clauses))
+            while newvar in set_of_names:
+                newvar += str(len(clauses))
+
+            newvar = Variable(newvar)
+
             if tree.pol == 1:
                 clauses.append(Tree("start",left=Tree(
                             Connective.Implication(),

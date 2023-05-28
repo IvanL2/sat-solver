@@ -1,4 +1,4 @@
-from dpll import dpll, dpll_model
+from DPLL.dpll import dpll, dpll_model
 
 
 example = "((p <-> ~q) -> r) -> r /\~p"
@@ -13,17 +13,17 @@ print(dpll_model("a n ¬a"))
 
 # If interested in submodules
 
-from parser import Parser
+from DPLL.parser import Parser
 
 ast = Parser.parse(example) # ast short for abstract syntax tree
 Parser.print_exp(ast)       # Takes a tree and prints a reconstructed expression
 # Parser.print_exp(ast)     # The output of this is quite ugly; the nodes of the tree are printed in depth-first fashion
 
-from cnf_transformer import Transformer
+from DPLL.cnf_transformer import Transformer
 clauses = Transformer.transform(ast) # Transforms into a set of trees that represent the clauses of the CNF-SAT problem
 #print(clauses)
 
-from solver import Solver
+from DPLL.solver import Solver
 answer = Solver.solve(clauses) # Runs the DPLL algorithm, and returns True for satisfiable and False for unsat.
 print(answer)
 

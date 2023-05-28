@@ -42,20 +42,24 @@ class Solver:
                 vars.add((x.value.name, True))
         return vars
     
-    def propagate(clauses: list, var: Tuple[str, bool]):
+    def propagate(clauses: list, var: Tuple[str, bool], verbose: bool=False):
+        if verbose: print("Propagating variable:", var)
         to_remove = []
         for c in clauses:
             if var in c:
                 to_remove.append(c)
             for y in c:
                 if (var[0], not var[1]) == y:
+                    if verbose: print(f"Found ({var[0], not var[1]}) in c; removing literal from clause {c}!")
                     c.remove(y)
                     break
         for v in to_remove:
+            if verbose: print(f"Removing clause {v}, from list of clauses!")
             clauses.remove(v)
+        if verbose: print("End propagation round")
 
 
-    def pure_literal_elim(clauses: list, unique_var_names: set):
+    def pure_literal_elim(clauses: list, unique_var_names: set, verbose: bool=False):
         pure_literals = []
         for var in unique_var_names:
             clauses_as_list = [list(clause) for clause in clauses] # clause is a set
@@ -68,18 +72,17 @@ class Solver:
                 # Pure literal
                 pure_literals.append(var)
                 continue
-
-        to_remove = []
+        if verbose: print("Pure literals:", pure_literals)
         for pure in pure_literals:
             for x in clauses:
                 for y in x:
-                    if y[0] == pure:
-                       to_remove.append(x)
+                    if y == pure:
+                       if verbose: print(f"Replaced {pure} in {x} with T")
+                       x.remove(pure)
+                       x.add(("T", True))
                        break
-        for x in to_remove:
-            clauses.remove(x)
 
-    def taut_elim(clauses: list):
+    def taut_elim(clauses: list, verbose: bool=False):
         to_remove = []
         for x in clauses:
             for y in x:
@@ -89,7 +92,9 @@ class Solver:
                 elif y[0] == "T":
                     to_remove.append(x)
                     break
+        if verbose: print("Tautologies:", to_remove)
         for x in to_remove:
+            if verbose: print("Removed tautology:", x)
             clauses.remove(x)
     
     def contra_elim(clauses: list):
@@ -110,7 +115,7 @@ class Solver:
                     raise RuntimeError()
         return uniques
 
-    def solve(old_clauses) -> Tuple[bool, List[Tuple[str, bool]]]:
+    def solve(old_clauses, verbose: False) -> Tuple[bool, List[Tuple[str, bool]]]:
         """Returns a tuple in the form (True/False if Satisfiable/Unsat, [list of variables that form the model if sat, else None])"""
         clauses = list()
         for x in old_clauses:
@@ -118,25 +123,33 @@ class Solver:
             clauses.append(vars)
         Solver.contra_elim(clauses) # Didn't check for Bottom in parser/transformer, so do it now.
         model = []
-        while True:
+        if verbose:
+            print("Solver original list of clauses:"," ".join([str(x) for x in clauses]))
+        while True:    
             unique_var_names = Solver.get_unique_names(clauses)
             if len(unique_var_names) == 0:
                 break
-            Solver.pure_literal_elim(clauses, unique_var_names)
-            Solver.taut_elim(clauses)
+            Solver.pure_literal_elim(clauses, unique_var_names, verbose)
+            Solver.taut_elim(clauses, verbose)
             unit_clauses = list(filter(lambda c: len(c)==1, clauses))
             if len(unit_clauses) > 0:
                 # Propagate unit clause
                 var = next(iter(unit_clauses[0]))
                 model.append(var)
-                Solver.propagate(clauses, var)
+                Solver.propagate(clauses, var, verbose)
             else:
                 var = next(iter(unique_var_names))
+                if verbose: print("Add", var,"to list of clauses.")
                 model.append(var)
                 newset = set()
                 newset.add(var)
                 clauses.append(newset)
-                Solver.propagate(clauses, var)
+                Solver.propagate(clauses, var, verbose)
             if set() in clauses:
+                if verbose:
+                    print("Empty clause found in list of clauses (unsatisfiable): {"," ".join([str(x) for x in clauses]), "}")
                 return (False, None)
+            if verbose:
+                print("Solver iteration done. Remaining clauses:"," ".join([str(x) for x in clauses]))
+        if verbose: print("List of clauses empty. Satisfiable.")
         return (len(clauses) == 0, None if len(clauses) != 0 else model)
