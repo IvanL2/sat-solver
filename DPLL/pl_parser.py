@@ -21,22 +21,17 @@ class TokenType(Enum):
 class Token():
     def __init__(self, value: str, type: TokenType):
         self.value = value
-        self.type = type
-    
+        self.type = type  
     def __str__(self):
         return f"<Token value: '{self.value}' type: {self.type.name}>"
     def BinaryOp(value: str):
         return Token(value, TokenType.BINARY_OPERATOR)
-
     def UnaryOp(value: str):
         return Token(value, TokenType.UNARY_OPERATOR)
-
     def Var(value: str):
         return Token(value, TokenType.VARIABLE)
-    
     def StartBracket():
         return Token('(', TokenType.START_BRACKET)
-
     def EndBracket():
         return Token(')', TokenType.END_BRACKET)
     
@@ -45,8 +40,7 @@ grammar = [[TokenType.START, [TokenType.EXPR]],
          [TokenType.EXPR, [TokenType.EXPR, TokenType.BINARY_OPERATOR, TokenType.EXPR]],
          [TokenType.EXPR, [TokenType.UNARY_OPERATOR, TokenType.EXPR]],
          [TokenType.EXPR, [TokenType.START_BRACKET, TokenType.EXPR, TokenType.END_BRACKET]],
-         [TokenType.EXPR, [TokenType.VARIABLE]]
-         ]
+         [TokenType.EXPR, [TokenType.VARIABLE]]]
 
 class Parser:
 
@@ -73,7 +67,7 @@ class Parser:
             else:
                 lexeme += char
                 if (i+1 < len(newexp)):
-                    if not newexp[i+1].isalnum(): # if operator or tautology comes next
+                    if newexp[i+1] in binary_ops or newexp[i+1] in unary_ops or newexp[i+1] in brackets: # if operator comes next
                         tokens.append(Token.Var(lexeme))
                         lexeme = ""
                 else: # EOF
@@ -89,25 +83,22 @@ class Parser:
         stack = [TokenType._TRUE_START]
         token = tokens.pop(0)
         while 1:
-            handle_b = 0
             rule = None
             for b in range(1, len(stack), 1):
                 rules_st_a_to_b = list(filter(lambda x: x[1] == stack[b:len(stack)], grammar))
                 if len(rules_st_a_to_b) == 1: # If unique handle exists
-                    # S/R conflict with Start -> Expr, and Expr -> Expr BinOp Expr
+                    # R/R conflict with Start -> Expr, and Expr -> Expr BinOp Expr
                     # Ad hoc fix, to only reduce to start as a last resort.
                     if rules_st_a_to_b[0][1] == [TokenType.EXPR] and rules_st_a_to_b[0][0] == TokenType.START:
                         if len(stack) == 2 and len(tokens) == 0:
-                            handle_b = b
                             rule = rules_st_a_to_b[0]
                         else:
-                            handle_b = 0
+                            rule = None
                     else:
-                        handle_b = b
                         rule = rules_st_a_to_b[0]
                     break
                 #print("COULD NOT FIND HANDLE", x[1], stack[b:len(stack)])
-            if handle_b != 0:
+            if rule != None:
                 for i in range(len(rule[1])):
                     stack.pop()
                 stack.append(rule[0])
@@ -116,6 +107,7 @@ class Parser:
                     stack.append(token)
                     token = tokens.pop(0)
                 else:
+                    print("ERROR, token stack: ", stack, [str(x) for x in tokens_with_data])
                     return False
                             
             if (stack[-1] == TokenType.START and token == TokenType.EOF):
