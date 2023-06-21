@@ -18,6 +18,9 @@ example_tf = "T /\ F"
 example_tf2 = "T \/ F"
 example_empty = ""
 example_long_nots = "¬¬a"
+example_bad = ")a -> b("
+example_bad2 = "()"
+example_bad3 = "a(b \/ c)"
 print(f"EXPRESSION: {example}, RESULT: {'SAT' if dpll(example) else 'UNSAT'}, EXPECTED: SAT")
 print(f"EXPRESSION: {example2}, RESULT: {'SAT' if dpll(example2) else 'UNSAT'}, EXPECTED: SAT")
 print(f"EXPRESSION: {example3}, RESULT: {'SAT' if dpll(example3) else 'UNSAT'}, EXPECTED: SAT")
@@ -39,3 +42,18 @@ except:
     print(f"EXPRESSION: {example_empty} gracefully crashed!")
     pass
 print(f"EXPRESSION: {example_long_nots}, RESULT: {'SAT' if dpll(example_long_nots) else 'UNSAT'}, EXPECTED: SAT")
+
+try:
+    print(f"EXPRESSION: {example_bad}, RESULT: {'SAT' if dpll(example_bad) else 'UNSAT'}, EXPECTED: ERROR")
+except SyntaxError:
+    print(f"Successfully detected syntax error in {example_bad}.")
+
+try:
+    print(f"EXPRESSION: {example_bad2}, RESULT: {'SAT' if dpll(example_bad2) else 'UNSAT'}, EXPECTED: ERROR")
+except SyntaxError:
+    print(f"Successfully detected syntax error in {example_bad2}.")
+
+try:
+    print(f"EXPRESSION: {example_bad3}, RESULT: {'SAT' if dpll(example_bad3) else 'UNSAT'}, EXPECTED: ERROR")
+except SyntaxError:
+    print(f"Successfully detected syntax error in {example_bad3}.")
