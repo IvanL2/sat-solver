@@ -2,6 +2,7 @@ from .tree import *
 from .semantics import *
 from typing import Set
 from enum import Enum
+from . import verbosity_config
 
 precedence = {'¬': 5, '∧': 4, '∨': 3, '→': 2, '↔': 1}
 equiv_symbols = {" ":"","<->":"↔","=":"↔","->":"→","~":"¬","\/":"∨","/\\":"∧","&":"∧","|":"∨","!":"¬","F":"⊥","T":"⊤"}
@@ -43,12 +44,24 @@ grammar = [[TokenType.START, [TokenType.EXPR]],
          [TokenType.EXPR, [TokenType.VARIABLE]]]
 
 class Parser:
+    def __str_list_of_enums__(arr: list[TokenType]) -> str:
+        string = "["
+        for x in arr:
+            string = string + "<" + str(x) + ">, "
+        if len(string) > 3:
+          string = string[0:len(string)-2]
+        string += "]"
+        return string
 
-    def lexer(exp: str) -> list[Token]:
+
+    def lexer(exp: str, verbose: bool=False) -> list[Token]:
+        if (verbose): print("Lexer start")
         newexp = exp
         for x in equiv_symbols.keys():
             newexp = newexp.replace(x,equiv_symbols[x])
-        
+        if (verbose):
+            print("Replacing operator symbols with internal single character equivalents.")
+            print(f"Equivalent expression: {newexp}.")
         if ">" in newexp or "<" in newexp:
             raise SyntaxError(f"Invalid character detected in expression \"{exp}\"!")
         
@@ -59,25 +72,34 @@ class Parser:
         brackets = ["(",")"]
         for i, char in enumerate(newexp):
             if char in brackets:
+                if verbose: print(f"Bracket {char} detected, appending to token stack.")
                 tokens.append(Token.StartBracket() if char == "(" else Token.EndBracket())
             elif char in unary_ops:
+                if verbose: print(f"Unary operator {char} detected, appending to token stack.")
                 tokens.append(Token.UnaryOp(char))
             elif char in binary_ops:
+                if verbose: print(f"Binary operator {char} detected, appending to token stack.")
                 tokens.append(Token.BinaryOp(char))
             else:
                 lexeme += char
+                if (verbose): print(f"Normal character detected, updated lexeme: {lexeme}.")
                 if (i+1 < len(newexp)):
                     if newexp[i+1] in binary_ops or newexp[i+1] in unary_ops or newexp[i+1] in brackets: # if operator comes next
                         tokens.append(Token.Var(lexeme))
+                        if (verbose): print(f"Next character is operator, appending lexeme {lexeme} to token stack.")
                         lexeme = ""
                 else: # EOF
                     if lexeme != "":
+                        if (verbose): print(f"End of sequence, appending leftover lexeme {lexeme} to token stack.")
                         tokens.append(Token.Var(lexeme))
+        if verbose:
+            print("Lexer finished")
         return tokens
 
-    def syntax_check(tokens_with_data: list[Token]) -> bool:
+    def syntax_check(tokens_with_data: list[Token], verbose: bool=False) -> bool:
         """Returns True if the given list of tokens produces a valid propositional logic expression"""
         # Basic SR parser
+        if verbose: print("Syntax check start")
         tokens = [x.type for x in tokens_with_data]
         tokens.append(TokenType.EOF)
         stack = [TokenType._TRUE_START]
@@ -87,23 +109,31 @@ class Parser:
             for b in range(1, len(stack), 1):
                 rules_st_a_to_b = list(filter(lambda x: x[1] == stack[b:len(stack)], grammar))
                 if len(rules_st_a_to_b) == 1: # If unique handle exists
+                    if verbose:
+                        print(f"Unique handle detected. LHS: <{rules_st_a_to_b[0][0]}> RHS: {Parser.__str_list_of_enums__(rules_st_a_to_b[0][1])}.")
                     # R/R conflict with Start -> Expr, and Expr -> Expr BinOp Expr
                     # Ad hoc fix, to only reduce to start as a last resort.
                     if rules_st_a_to_b[0][1] == [TokenType.EXPR] and rules_st_a_to_b[0][0] == TokenType.START:
                         if len(stack) == 2 and len(tokens) == 0:
                             rule = rules_st_a_to_b[0]
                         else:
+                            if verbose: print(f"Ignore handle (R/R conflict resolve) to avoid matching start rule before last iteration.")
                             rule = None
                     else:
                         rule = rules_st_a_to_b[0]
                     break
                 #print("COULD NOT FIND HANDLE", x[1], stack[b:len(stack)])
             if rule != None:
+                if verbose:
+                    print(f"Popping RHS {Parser.__str_list_of_enums__(rule[1])} from stack: {Parser.__str_list_of_enums__(stack)}")
                 for i in range(len(rule[1])):
                     stack.pop()
+                if verbose:
+                    print(f"Push LHS <{rule[0]}> to stack: {Parser.__str_list_of_enums__(stack)}.")
                 stack.append(rule[0])
             else:
                 if (token != TokenType.EOF):
+                    if verbose: print(f"No handle found for parse stack: {Parser.__str_list_of_enums__(stack)}, pushing next token <{token}>.")
                     stack.append(token)
                     token = tokens.pop(0)
                 else:
@@ -112,13 +142,17 @@ class Parser:
                             
             if (stack[-1] == TokenType.START and token == TokenType.EOF):
                 break    # finished
+            else:
+                if verbose: print("\n")
+        if verbose:
+            print("Syntax check finished")
         return True
 
     def parse(exp : str, verbose: bool=False) -> Tree:
-        tokens = Parser.lexer(exp)
-        if verbose:
+        tokens = Parser.lexer(exp, verbose=(verbose and verbosity_config.LEXER_VERBOSE))
+        if verbose and verbosity_config.LEXER_VERBOSE:
             print("Parsed into tokens: ", " ".join([str(x) for x in tokens]))
-        if not Parser.syntax_check(tokens):
+        if not Parser.syntax_check(tokens, verbose=(verbose and verbosity_config.SYNTAX_VERBOSE)):
             raise SyntaxError(f"Invalid expression in \"{exp}\"!")
         infixconverter = Conversion()
         postfix = infixconverter.infixToPostfix(tokens)

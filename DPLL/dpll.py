@@ -7,7 +7,7 @@ from typing import Tuple, List
 
 def dpll(exp: str, verbose=False) -> bool:
     """Returns True if the given expression is satisfiable, False if unsatisfiable."""
-    if verbose: print("========== PARSER START ==========")
+    if verbose: print("=========== PARSER START ===========")
     parsed = Parser.parse(exp, verbose)
     if verbose: print("========== TRANSFORM START ==========")
     clauses = Transformer.transform(parsed, verbose)

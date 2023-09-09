@@ -3,24 +3,26 @@ from .tree import Tree
 from .pl_parser import Parser
 from .semantics import *
 import copy
+from . import verbosity_config
 
 class Transformer:
     def transform(tree : Tree, verbose: bool=False):
+        internal_verbose = verbose and verbosity_config.TRANSFORMER_VERBOSE
         named_clauses = []
         Semantics.polarise(tree)
         names = set()
         Transformer.get_names(tree, names)
-        if verbose: print("Added polarity information to tree.")
+        if internal_verbose: print("Added polarity information to tree.")
         Transformer.naming(tree=tree, clauses=named_clauses, set_of_names=names)
         named_clauses.append(tree)
-        if verbose:
+        if internal_verbose:
             print(f"Applied naming algorithm (Tseytin transformation).\nResulting clauses:")
             for x in named_clauses:
                 Parser.print_exp(x)
         clauses = set()
         for x in named_clauses:
             Transformer.generate_clauses(x, clauses)
-        if verbose:
+        if internal_verbose:
             print(f"Transformed into CNF:")
             for x in clauses:
                 Parser.print_exp(x)
