@@ -1,6 +1,6 @@
 class Tree():
     """Typical tree data structure, with parent information"""
-    def __init__(self, value, parent=None, left=None, right=None):
+    def __init__(self, value, parent: "Tree"=None, left: "Tree"=None, right: "Tree"=None):
         self.parent = parent
         self.left = left
         if self.left != None:
@@ -10,6 +10,7 @@ class Tree():
             self.right.parent = self
         self.value = value
 
+    @staticmethod
     def get_height(tree):
         arr = [0]
         if tree.left != None:
