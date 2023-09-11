@@ -112,7 +112,8 @@ class LexerTest(unittest.TestCase):
         test_cases = ["a","(a)",
                       "(a -> b)","(a \\/ b)","(a /\\ b)","(a <-> b)",
                       "¬a","¬¬a",
-                      "¬(a<->b)","¬¬¬(a->b->c/\\d)<->(e\\/a)"
+                      "¬(a<->b)","¬¬¬(a->b->c/\\d)<->(e\\/a)",
+                      "a n ¬b"
         ]
         for test_case in test_cases:
             self.assertTrue(parser.syntax_check(parser.lexer(test_case)))
