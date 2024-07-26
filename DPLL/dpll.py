@@ -35,8 +35,20 @@ def dpll_model(exp: str, verbose=False) -> List[Tuple[str, bool]]:
 
 def dpll_valid(expr: str, verbose: bool=False) -> bool:
     formula = f"¬({expr})"
+    if verbose: print(f"Check if {formula} is UNSAT")
     return not dpll(formula, verbose=verbose)
+
+def dpll_valid_with_cex(expr: str, verbose: bool=False) -> List[Tuple[str, bool]]:
+    formula = f"¬({expr})"
+    if verbose: print(f"Check if {formula} is UNSAT")
+    return dpll_model(formula, verbose=verbose)
 
 def dpll_equiv(expr1: str, expr2: str, verbose: bool=False) -> bool:
     formula = f"¬(({expr1}) = ({expr2}))"
+    if verbose: print(f"Check if {formula} is UNSAT")
     return not dpll(formula, verbose=verbose)
+
+def dpll_equiv_with_cex(expr1: str, expr2: str, verbose: bool=False) -> List[Tuple[str, bool]]:
+    formula = f"¬(({expr1}) = ({expr2}))"
+    if verbose: print(f"Check if {formula} is UNSAT")
+    return dpll_model(formula, verbose=verbose)

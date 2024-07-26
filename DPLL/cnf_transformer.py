@@ -7,22 +7,22 @@ from . import verbosity_config
 
 class Transformer:
     def transform(tree : Tree, verbose: bool=False) -> Set[Tree]:
-        internal_verbose = verbose and verbosity_config.TRANSFORMER_VERBOSE
+        steps_verbose = verbose and verbosity_config.TRANSFORMER_STEPS_VERBOSE
         named_clauses = []
         Semantics.polarise(tree)
         names = set()
         Transformer.get_names(tree, names)
-        if internal_verbose: print("Added polarity information to tree.")
+        if steps_verbose: print("Added polarity information to tree.")
         Transformer.naming(tree=tree, clauses=named_clauses, set_of_names=names)
         named_clauses.append(tree)
-        if internal_verbose:
+        if steps_verbose:
             print(f"Applied naming algorithm (Tseytin transformation).\nResulting clauses:")
             for x in named_clauses:
                 Parser.print_exp(x)
         clauses = set()
         for x in named_clauses:
-            Transformer.generate_clauses(x, clauses, verbose=verbose)
-        if verbose:
+            Transformer.generate_clauses(x, clauses, verbose=steps_verbose)
+        if verbose and verbosity_config.TRANSFORMER_RESULT_VERBOSE:
             print(f"Transformed into CNF:")
             for x in clauses:
                 Parser.print_exp(x)

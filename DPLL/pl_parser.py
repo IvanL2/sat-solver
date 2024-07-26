@@ -156,7 +156,7 @@ class Parser:
             raise SyntaxError(f"Invalid expression in \"{exp}\"!")
         infixconverter = Conversion()
         postfix = infixconverter.infixToPostfix(tokens)
-        if verbose:
+        if verbose and verbosity_config.LEXER_VERBOSE:
             print("Postfix: ", " ".join([str(x) for x in postfix]))
         arguments = []
         for x in postfix:
