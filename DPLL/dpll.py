@@ -29,3 +29,14 @@ def dpll_model(exp: str, verbose=False) -> List[Tuple[str, bool]]:
         return list(filter(lambda x: (x[0] in original_vars) and (x[0] != "⊤") and (x[0] != "⊥"), model_with_names))
     else:
         return None
+    
+
+# Util methods
+
+def dpll_valid(expr: str, verbose: bool=False) -> bool:
+    formula = f"¬({expr})"
+    return not dpll(formula, verbose=verbose)
+
+def dpll_equiv(expr1: str, expr2: str, verbose: bool=False) -> bool:
+    formula = f"¬(({expr1}) = ({expr2}))"
+    return not dpll(formula, verbose=verbose)

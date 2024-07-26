@@ -53,7 +53,7 @@ class Tautology(Variable):
 
 class Contradiction(Variable):
     def __init__(self):
-        super().__init__("F")
+        super().__init__("⊥")
 
 class Operator():
     def __init__(self, name):

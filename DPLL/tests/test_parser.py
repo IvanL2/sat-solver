@@ -117,13 +117,16 @@ class LexerTest(unittest.TestCase):
         for test_case in test_cases:
             self.assertTrue(parser.syntax_check(parser.lexer(test_case)))
 
-        bad_test_cases = [""," ", # Empty case
+        bad_test_cases = [""," ","()" # Empty cases
                           "(a ->)","(a","a <-> b)", "((a -> b) -> c))" # Mismatched brackets case
                           "a ¬ a", # Negation as binary operator
                           "\\/ a","/\\ a","-> a","<-> a", # Binary operators as prefix unary
                           "a \\/","a /\\","a ->","a <->", # Binary operators as postfix unary
                           "a n ¬b", # n should be treated as char not operator
-                          "a v ¬b"] # v should be treated as char not operator
+                          "a v ¬b", # v should be treated as char not operator
+                          "a(b & c)", # do not allow implicit distribution
+                          "((a & b)", "(a & b))" # mismatched brackets
+                          ] 
         for test_case in bad_test_cases:
             self.assertFalse(parser.syntax_check(parser.lexer(test_case)))
     

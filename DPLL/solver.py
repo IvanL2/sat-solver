@@ -34,44 +34,42 @@ class Solver:
         return literals
 
     def transform_to_variables(tree: Tree, verbose: bool=False) -> Set[Tuple[str, bool]]:
+        internal_verbose = verbosity_config.SOLVER_LITERAL_PARSING_VERBOSE
         Semantics.literal_marker(tree)
         tree_literals = Solver.get_literals(tree)
-        if verbose:
+        if internal_verbose:
             print(f"Literals of {Parser.print_exp_return_str(tree)}:", " ".join([Parser.print_exp_return_str(x) for x in tree_literals]))
         vars = set()
         for x in tree_literals:
             if isinstance(x.value, Operator): # At this point, only operator is negation
-                if verbose:
-                    print(f"{(x.left.value.name, False)}")
                 vars.add((x.left.value.name, False))
             else:
-                if verbose:
-                    print(f"{x.value.name, True}")
                 vars.add((x.value.name, True))
         return vars
     
     
     def propagate(clauses: list, verbose: bool=False):
+        internal_verbose = verbose and verbosity_config.SOLVER_UNIT_PROPAGATION_VERBOSE
         unit_clauses = list(filter(lambda c: len(c)==1, clauses))
         model = []
-        if verbose: print(f"Start propagation, unit clauses: {unit_clauses}\nStarting clauses:")
+        if internal_verbose: print(f"Start propagation, unit clauses: {unit_clauses}\nStarting clauses:")
         while (len(unit_clauses) > 0):
             var = next(iter(unit_clauses[0]))
             model.append(var)
-            if verbose: print("Propagating variable:", var)
+            if internal_verbose: print("Propagating variable:", var)
             to_remove = []
             for c in clauses:
                 if var in c:
                     to_remove.append(c)
                 for y in c:
                     if (var[0], not var[1]) == y:
-                        if verbose: print(f"Found ({var[0], not var[1]}) in c; removing literal from clause {c}!")
+                        if internal_verbose: print(f"Found ({var[0], not var[1]}) in c; removing literal from clause {c}!")
                         c.remove(y)
                         break
             for v in to_remove:
-                if verbose: print(f"Removing clause {v}, from list of clauses!")
+                if internal_verbose: print(f"Removing clause {v}, from list of clauses!")
                 clauses.remove(v)
-            if verbose: print(f"End propagation round, new clauses: {clauses}")
+            if internal_verbose: print(f"End propagation round, new clauses: {clauses}\n")
             unit_clauses = list(filter(lambda c: len(c)==1, clauses))
         return model
 
@@ -109,7 +107,7 @@ class Solver:
                 if (y[0], not y[1]) in x:
                     to_remove.append(x)
                     break
-                elif y[0] == "T":
+                elif (y[0] == "⊤" and y[1] == True) or (y[0] == "⊥" and y[1] == False):
                     to_remove.append(x)
                     break
         if internal_verbose: print("Tautologies:", to_remove)
@@ -121,9 +119,9 @@ class Solver:
     def contra_elim(clauses: list, verbose: bool=False):
         for x in clauses:
             for y in x:
-                if y[0] == "F":
-                    if (verbose):
-                        print(f"Removing {y} from clause {x}.")
+                if (y[0] == "⊥" and y[1] == True) or (y[0] == "⊤" and y[1] == False):
+                    if (verbose and verbosity_config.SOLVER_CONTRA_REMOVE_VERBOSE):
+                        print(f"Removing contradiction {y} from clause {x}.")
                     x.remove(y)
                     break
     
@@ -137,7 +135,8 @@ class Solver:
                     raise RuntimeError()
         return uniques
     
-    def dpll(clauses: list, verbose: bool=False) -> Tuple[bool, List[Tuple[str, bool]]]:
+    def dpll(clauses: list, verbose: bool=False, depth: int=0) -> Tuple[bool, List[Tuple[str, bool]]]:
+        iteration_verbose = verbose and verbosity_config.SOLVER_ITERATION_SUMMARY_VERBOSE
         unique_var_names = Solver.get_unique_names(clauses)
         model = []
         model += [list(x) for x in Solver.pure_literal_elim(clauses, unique_var_names, verbose=verbose)]
@@ -145,9 +144,11 @@ class Solver:
         model += Solver.propagate(clauses, verbose=verbose)
     
         if len(clauses) == 0:
+            if iteration_verbose: print(f"Empty set of clauses, SAT at depth {depth}")
             ret_val = (True, model)
             return ret_val
         elif set() in clauses:
+            if iteration_verbose: print(f"Empty clause found, UNSAT at depth {depth}")
             ret_val = (False, None)
             return ret_val
 
@@ -162,18 +163,21 @@ class Solver:
         newset = set()
         newset.add(not_var)
         clauses_with_not_var.append(newset)
-        (satisfiable, new_model) = Solver.dpll(clauses, verbose=verbose)
+        (satisfiable, new_model) = Solver.dpll(clauses, verbose=verbose, depth=depth+1)
         if (satisfiable):
+            if iteration_verbose:
+                print(f"First branch returned SAT, append model at depth {depth}")
             model += new_model
             return (True, model)
         else:
-            if verbose: print(f"\nFirst branch UNSAT, try {clauses_with_not_var}")
-            (satisfiable2, new_model_2) = Solver.dpll(clauses_with_not_var, verbose=verbose)
+            if iteration_verbose:
+                print(f"\nFirst branch returned UNSAT, current depth {depth}, try {clauses_with_not_var}")
+            (satisfiable2, new_model_2) = Solver.dpll(clauses_with_not_var, verbose=verbose, depth=depth+1)
             if (satisfiable2 == False):
-                if verbose: print(f"\nSecond branch UNSAT")
+                if iteration_verbose: print(f"\nSecond branch returned UNSAT, current depth {depth}")
                 return (False, None)
             else:
-                if verbose: print(f"\nSecond branch SAT")
+                if iteration_verbose: print(f"\nSecond branch returned SAT, append model at depth {depth}")
                 model += new_model_2
                 return (True, model)
 
@@ -183,5 +187,5 @@ class Solver:
         for x in old_clauses:
             vars = Solver.transform_to_variables(x, verbose=verbose)
             clauses.append(vars)
-        Solver.contra_elim(clauses) # Didn't check for Bottom in parser/transformer, so do it now.
+        Solver.contra_elim(clauses, verbose=verbose) # Didn't check for Bottom in parser/transformer, so do it now.
         return Solver.dpll(clauses, verbose=verbose)
