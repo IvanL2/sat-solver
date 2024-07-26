@@ -139,8 +139,8 @@ class Solver:
         iteration_verbose = verbose and verbosity_config.SOLVER_ITERATION_SUMMARY_VERBOSE
         unique_var_names = Solver.get_unique_names(clauses)
         model = []
-        model += [list(x) for x in Solver.pure_literal_elim(clauses, unique_var_names, verbose=verbose)]
-        model += [list(x) for x in Solver.taut_elim(clauses, verbose=verbose)]
+        model += Solver.pure_literal_elim(clauses, unique_var_names, verbose=verbose)
+        model += Solver.taut_elim(clauses, verbose=verbose)
         model += Solver.propagate(clauses, verbose=verbose)
     
         if len(clauses) == 0:
