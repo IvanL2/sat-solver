@@ -6,12 +6,8 @@ import copy
 from . import verbosity_config
 
 class Transformer:
-<<<<<<< HEAD
-    def transform(tree : Tree, verbose: bool=False):
-        internal_verbose = verbose and verbosity_config.TRANSFORMER_VERBOSE
-=======
     def transform(tree : Tree, verbose: bool=False) -> Set[Tree]:
->>>>>>> dpll_hs
+        internal_verbose = verbose and verbosity_config.TRANSFORMER_VERBOSE
         named_clauses = []
         Semantics.polarise(tree)
         names = set()
@@ -25,13 +21,8 @@ class Transformer:
                 Parser.print_exp(x)
         clauses = set()
         for x in named_clauses:
-<<<<<<< HEAD
-            Transformer.generate_clauses(x, clauses)
-        if internal_verbose:
-=======
             Transformer.generate_clauses(x, clauses, verbose=verbose)
         if verbose:
->>>>>>> dpll_hs
             print(f"Transformed into CNF:")
             for x in clauses:
                 Parser.print_exp(x)
