@@ -3,6 +3,7 @@ from .pl_parser import Parser
 from .tree import Tree
 from . import verbosity_config
 from typing import Set, List, Tuple
+import copy
 
 class Solver:
 
@@ -32,33 +33,47 @@ class Solver:
             literals += (Solver.get_literals(tree.right))
         return literals
 
-    def transform_to_variables(tree: Tree) -> Set[Tuple[str, bool]]:
+    def transform_to_variables(tree: Tree, verbose: bool=False) -> Set[Tuple[str, bool]]:
         Semantics.literal_marker(tree)
         tree_literals = Solver.get_literals(tree)
+        if verbose:
+            print(f"Literals of {Parser.print_exp_return_str(tree)}:", " ".join([Parser.print_exp_return_str(x) for x in tree_literals]))
         vars = set()
         for x in tree_literals:
-            if isinstance(x.value, Operator):
+            if isinstance(x.value, Operator): # At this point, only operator is negation
+                if verbose:
+                    print(f"{(x.left.value.name, False)}")
                 vars.add((x.left.value.name, False))
             else:
+                if verbose:
+                    print(f"{x.value.name, True}")
                 vars.add((x.value.name, True))
         return vars
     
-    def propagate(clauses: list, var: Tuple[str, bool], verbose: bool=False):
-        internal_verbose = verbose and verbosity_config.SOLVER_UNIT_PROPAGATION_VERBOSE
-        if internal_verbose: print("Propagating variable:", var)
-        to_remove = []
-        for c in clauses:
-            if var in c:
-                to_remove.append(c)
-            for y in c:
-                if (var[0], not var[1]) == y:
-                    if internal_verbose: print(f"Found ({var[0], not var[1]}) in c; removing literal from clause {c}!")
-                    c.remove(y)
-                    break
-        for v in to_remove:
-            if internal_verbose: print(f"Removing clause {v}, from list of clauses!")
-            clauses.remove(v)
-        if internal_verbose: print("End propagation round")
+    
+    def propagate(clauses: list, verbose: bool=False):
+        unit_clauses = list(filter(lambda c: len(c)==1, clauses))
+        model = []
+        if verbose: print(f"Start propagation, unit clauses: {unit_clauses}\nStarting clauses:")
+        while (len(unit_clauses) > 0):
+            var = next(iter(unit_clauses[0]))
+            model.append(var)
+            if verbose: print("Propagating variable:", var)
+            to_remove = []
+            for c in clauses:
+                if var in c:
+                    to_remove.append(c)
+                for y in c:
+                    if (var[0], not var[1]) == y:
+                        if verbose: print(f"Found ({var[0], not var[1]}) in c; removing literal from clause {c}!")
+                        c.remove(y)
+                        break
+            for v in to_remove:
+                if verbose: print(f"Removing clause {v}, from list of clauses!")
+                clauses.remove(v)
+            if verbose: print(f"End propagation round, new clauses: {clauses}")
+            unit_clauses = list(filter(lambda c: len(c)==1, clauses))
+        return model
 
 
     def pure_literal_elim(clauses: list, unique_var_names: set, verbose: bool=False) -> List[Tuple[str, bool]]:
@@ -119,52 +134,54 @@ class Solver:
                 try:
                     uniques.add((y[0], y[1]))
                 except Exception:
-                    print(y)
                     raise RuntimeError()
         return uniques
+    
+    def dpll(clauses: list, verbose: bool=False) -> Tuple[bool, List[Tuple[str, bool]]]:
+        unique_var_names = Solver.get_unique_names(clauses)
+        model = []
+        model += [list(x) for x in Solver.pure_literal_elim(clauses, unique_var_names, verbose=verbose)]
+        model += [list(x) for x in Solver.taut_elim(clauses, verbose=verbose)]
+        model += Solver.propagate(clauses, verbose=verbose)
+    
+        if len(clauses) == 0:
+            ret_val = (True, model)
+            return ret_val
+        elif set() in clauses:
+            ret_val = (False, None)
+            return ret_val
 
-    def solve(old_clauses, verbose: bool=False) -> Tuple[bool, List[Tuple[str, bool]]]:
+        unique_var_names = Solver.get_unique_names(clauses)
+
+        var = next(iter(unique_var_names))
+        clauses_with_not_var = copy.deepcopy(clauses)
+        not_var = (var[0], not var[1])
+        newset = set()
+        newset.add(var)
+        clauses.append(newset)
+        newset = set()
+        newset.add(not_var)
+        clauses_with_not_var.append(newset)
+        (satisfiable, new_model) = Solver.dpll(clauses, verbose=verbose)
+        if (satisfiable):
+            model += new_model
+            return (True, model)
+        else:
+            if verbose: print(f"\nFirst branch UNSAT, try {clauses_with_not_var}")
+            (satisfiable2, new_model_2) = Solver.dpll(clauses_with_not_var, verbose=verbose)
+            if (satisfiable2 == False):
+                if verbose: print(f"\nSecond branch UNSAT")
+                return (False, None)
+            else:
+                if verbose: print(f"\nSecond branch SAT")
+                model += new_model_2
+                return (True, model)
+
+    def solve(old_clauses: Set[Tree], verbose: bool=False) -> Tuple[bool, List[Tuple[str, bool]]]:
         """Returns a tuple in the form (True/False if Satisfiable/Unsat, [list of variables that form the model if sat, else None])"""
         clauses = list()
         for x in old_clauses:
-            vars = Solver.transform_to_variables(x)
+            vars = Solver.transform_to_variables(x, verbose=verbose)
             clauses.append(vars)
-        if (verbosity_config.SOLVER_CONTRA_REMOVE_VERBOSE and verbose):
-            print("Removing contradictions before running DPLL algorithm.")
-        Solver.contra_elim(clauses, verbose=(verbose and verbosity_config.SOLVER_CONTRA_REMOVE_VERBOSE)) # Didn't check for Bottom in parser/transformer, so do it now.
-        if (verbosity_config.SOLVER_CONTRA_REMOVE_VERBOSE and verbose):
-            print("Finished removing contradictions.")
-        model = []
-        summary_verbose = verbose and verbosity_config.SOLVER_ITERATION_SUMMARY_VERBOSE
-        if verbose:
-            print("Solver original list of clauses:\n","\n".join([str(x) for x in clauses]))
-            print("Solver starting\n\n")
-        while True:
-            unique_var_names = Solver.get_unique_names(clauses)
-            if len(unique_var_names) == 0:
-                break
-            model += [list(x) for x in Solver.pure_literal_elim(clauses, unique_var_names, verbose)]
-            model += [list(x) for x in Solver.taut_elim(clauses, verbose)]
-            unit_clauses = list(filter(lambda c: len(c)==1, clauses))
-            if len(unit_clauses) > 0:
-                # Propagate unit clause
-                var = next(iter(unit_clauses[0]))
-                model.append(var)
-                Solver.propagate(clauses, var, verbose)
-            else:
-                var = next(iter(unique_var_names))
-                if summary_verbose: print("Add", var,"to list of clauses.")
-                model.append(var)
-                newset = set()
-                newset.add(var)
-                clauses.append(newset)
-                Solver.propagate(clauses, var, verbose)
-            if set() in clauses:
-                if summary_verbose:
-                    print("Empty clause found in list of clauses (unsatisfiable): {"," ".join([str(x) for x in clauses]), "}")
-                return (False, None)
-            if summary_verbose:
-                print("Solver iteration done. Remaining clauses:"," ".join([str(x) for x in clauses]))
-                print("\n\n")
-        if verbose: print("List of clauses empty. Satisfiable.")
-        return (len(clauses) == 0, None if len(clauses) != 0 else model)
+        Solver.contra_elim(clauses) # Didn't check for Bottom in parser/transformer, so do it now.
+        return Solver.dpll(clauses, verbose=verbose)

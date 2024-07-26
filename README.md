@@ -16,3 +16,8 @@ The model returned by `dpll_model` is non-deterministic due to sets' unordered n
 # License
 
 This project is licensed under the terms of the [MIT License](LICENSE.md)
+
+
+#### Quick reference of equivalent problems
+Formula A is **valid** if and only if ¬A is **unsatisfiable**; if a solution exists then **not valid**
+Formula A is **equivalent** to Formula B if and only iff ¬(A ↔ B) is **unsatisfiable**; if a solution exists then **not valid**
