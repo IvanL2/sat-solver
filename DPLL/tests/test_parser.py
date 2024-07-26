@@ -124,8 +124,8 @@ class LexerTest(unittest.TestCase):
                           "a \\/","a /\\","a ->","a <->", # Binary operators as postfix unary
                           "a n ¬b", # n should be treated as char not operator
                           "a v ¬b", # v should be treated as char not operator
-                          "a(b & c)", # do not allow implicit distribution
-                          "((a & b)", "(a & b))" # mismatched brackets
+                          "a(b && c)", # do not allow implicit distribution
+                          "((a && b)", "(a && b))" # mismatched brackets
                           ] 
         for test_case in bad_test_cases:
             self.assertFalse(parser.syntax_check(parser.lexer(test_case)))
