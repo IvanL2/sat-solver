@@ -10,10 +10,11 @@ class Tree():
             self.right.parent = self
         self.value = value
 
+    @staticmethod
     def get_height(tree):
         arr = [0]
         if tree.left != None:
-            arr.append(tree.right.get_height(tree.left))
+            arr.append(Tree.get_height(tree.left))
         if tree.right != None:
-            arr.append(tree.right.get_height(tree.right))
+            arr.append(Tree.get_height(tree.right))
         return 1+max(arr)

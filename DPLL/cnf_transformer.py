@@ -5,7 +5,7 @@ from .semantics import *
 import copy
 
 class Transformer:
-    def transform(tree : Tree, verbose: bool=False):
+    def transform(tree : Tree, verbose: bool=False) -> Set[Tree]:
         named_clauses = []
         Semantics.polarise(tree)
         names = set()
@@ -19,7 +19,7 @@ class Transformer:
                 Parser.print_exp(x)
         clauses = set()
         for x in named_clauses:
-            Transformer.generate_clauses(x, clauses)
+            Transformer.generate_clauses(x, clauses, verbose=verbose)
         if verbose:
             print(f"Transformed into CNF:")
             for x in clauses:
@@ -46,6 +46,7 @@ class Transformer:
                 parent.left = final
             else:
                 parent.right = final
+            modified = True
         currenttree = tree
         if modified:
             currenttree = tree.parent.left if (left_or_right == "left") else tree.parent.right
@@ -68,6 +69,7 @@ class Transformer:
                 parent.left = final
             else:
                 parent.right = final
+            modified = True
         currenttree = tree
         if modified:
             currenttree = tree.parent.left if (left_or_right == "left") else tree.parent.right
@@ -183,7 +185,7 @@ class Transformer:
         # everything is in CNF, but might fail at parent if anything changed, hence return modified.
         return modified
     
-    def split_conjunctions(tree: Tree, clauses: set):
+    def split_conjunctions(tree: Tree, clauses: Set[Tree]):
         if tree.value == "start":
             Transformer.split_conjunctions(tree.left, clauses)
             return
@@ -193,7 +195,7 @@ class Transformer:
         else:
             clauses.add(tree)
 
-    def generate_clauses(tree : Tree, clauses: set) -> set:
+    def generate_clauses(tree : Tree, clauses: Set[Tree], verbose: bool=False):
         """
         1) Replace <-> with conj. of disj. (a <-> b) => (¬a v b) /\ (a v ¬b) 
         2) Replace -> with alternative (a -> b) => (¬a v b)
@@ -202,11 +204,30 @@ class Transformer:
         5) Transform any DNFs left into CNFs
         6) Split CNF into clauses
         """
+        if verbose:
+            print()
+            print("Start transforming:", end=" ")
+            Parser.print_exp(tree)
         Transformer.replace_equivs(tree)
+        if verbose:
+            print(f"After equivalence replacements:", end=" ")
+            Parser.print_exp(tree)
         Transformer.replace_implics(tree)
+        if verbose:
+            print(f"After implication replacements:", end=" ")
+            Parser.print_exp(tree)
         Transformer.push_negations(tree)
+        if verbose:
+            print(f"After pushing negations:", end=" ")
+            Parser.print_exp(tree)
         Transformer.double_neg_remove(tree)
+        if verbose:
+            print(f"After removing double negations:", end=" ")
+            Parser.print_exp(tree)
         Transformer.dnf_to_cnf(tree)
+        if verbose:
+            print(f"After DNF to CNF (FINAL):", end=" ")
+            Parser.print_exp(tree)
         Transformer.split_conjunctions(tree, clauses)
 
     def get_names(tree: Tree, names: set):

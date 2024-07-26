@@ -1,4 +1,4 @@
-from DPLL.dpll import dpll
+from DPLL.dpll import dpll, dpll_model
 
 example4 = "(a <-> b) -> c"
 example = "((p <-> ~q) -> r) -> r /\~p"
@@ -18,6 +18,7 @@ example_tf = "T /\ F"
 example_tf2 = "T \/ F"
 example_empty = ""
 example_long_nots = "¬¬a"
+example_real = "!((a = b) = (a -> b))"
 print(f"EXPRESSION: {example}, RESULT: {'SAT' if dpll(example) else 'UNSAT'}, EXPECTED: SAT")
 print(f"EXPRESSION: {example2}, RESULT: {'SAT' if dpll(example2) else 'UNSAT'}, EXPECTED: SAT")
 print(f"EXPRESSION: {example3}, RESULT: {'SAT' if dpll(example3) else 'UNSAT'}, EXPECTED: SAT")
@@ -39,3 +40,4 @@ except:
     print(f"EXPRESSION: {example_empty} gracefully crashed!")
     pass
 print(f"EXPRESSION: {example_long_nots}, RESULT: {'SAT' if dpll(example_long_nots) else 'UNSAT'}, EXPECTED: SAT")
+print(f"EXPRESSION: {example_real}, RESULT: {'SAT' if dpll(example_real) else 'UNSAT'}, EXPECTED: SAT")

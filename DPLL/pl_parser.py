@@ -211,6 +211,31 @@ class Parser:
             print(")", end="")
         if first: print()
     
+    def print_exp_return_str(tree: Tree):
+        string = ""
+        if (tree.value == "start"):
+            Parser.print_exp_return_str(tree.left)
+            return
+        if not isinstance(tree.value, Connective):
+            if (tree.value.name == "!"):
+                string+="¬"
+            else:
+                string+=tree.value.name
+            if tree.left != None:
+                string += Parser.print_exp_return_str(tree.left)
+        else:
+            string+="("
+            if tree.left != None:
+                string += Parser.print_exp_return_str(tree.left)
+            if tree.value.name in internal_symbol_to_icon:
+                string+=internal_symbol_to_icon[tree.value.name]
+            else:
+                string+=tree.value.name
+            if (tree.right != None):
+                string += Parser.print_exp_return_str(tree.right)
+            string+=")"
+        return string
+
     def get_variable_names(tree: Tree) -> Set[str]:
         if tree.left == None and tree.right == None:
             return {tree.value.name}
