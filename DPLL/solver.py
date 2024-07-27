@@ -114,7 +114,6 @@ class Solver:
         for x in to_remove:
             if internal_verbose: print("Removed tautology:", x)
             clauses.remove(x)
-        return to_remove
     
     def contra_elim(clauses: list, verbose: bool=False):
         for x in clauses:
@@ -140,7 +139,7 @@ class Solver:
         unique_var_names = Solver.get_unique_names(clauses)
         model = []
         model += Solver.pure_literal_elim(clauses, unique_var_names, verbose=verbose)
-        model += Solver.taut_elim(clauses, verbose=verbose)
+        Solver.taut_elim(clauses, verbose=verbose)
         model += Solver.propagate(clauses, verbose=verbose)
     
         if len(clauses) == 0:
