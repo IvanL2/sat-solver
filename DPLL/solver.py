@@ -81,11 +81,11 @@ class Solver:
             clauses_as_list = [list(clause) for clause in clauses] # clause is a set
             positive_occurences = list(filter(lambda x: x[1] == True and x[0]==var[0], [variable for c in clauses_as_list for variable in c]))
             negative_occurences = list(filter(lambda x: x[1] == False and x[0]==var[0], [variable for c in clauses_as_list for variable in c]))
-            if len(positive_occurences) == 0 and len(negative_occurences):
+            if len(positive_occurences) == 0 and len(negative_occurences) == 0:
                 # Variable not in list
                 continue
             if len(positive_occurences) == 0 or len(negative_occurences) == 0:
-                # Pure literal
+                # Pure literal (no +ve only -ve, or vice versa)
                 pure_literals.append(var)
                 continue
         if internal_verbose: print("Pure literals:", pure_literals)
@@ -93,9 +93,9 @@ class Solver:
             for x in clauses:
                 for y in x:
                     if y == pure:
-                       if internal_verbose: print(f"Replaced {pure} in {x} with T")
+                       if internal_verbose: print(f"Replaced {pure} in {x} with ⊤")
                        x.remove(pure)
-                       x.add(("T", True))
+                       x.add(("⊤", True))
                        break
         return pure_literals
 
