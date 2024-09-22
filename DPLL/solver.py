@@ -162,6 +162,8 @@ class Solver:
         newset = set()
         newset.add(not_var)
         clauses_with_not_var.append(newset)
+        if iteration_verbose:
+            print(f"Entering first branch, current depth {depth}, entering depth {depth+1} with splitting variable {var}")
         (satisfiable, new_model) = Solver.dpll(clauses, verbose=verbose, depth=depth+1)
         if (satisfiable):
             if iteration_verbose:
@@ -170,7 +172,7 @@ class Solver:
             return (True, model)
         else:
             if iteration_verbose:
-                print(f"\nFirst branch returned UNSAT, current depth {depth}, try {clauses_with_not_var}")
+                print(f"\nFirst branch returned UNSAT, current depth {depth}, entering depth {depth+1} with negated splitting variable {not_var}")
             (satisfiable2, new_model_2) = Solver.dpll(clauses_with_not_var, verbose=verbose, depth=depth+1)
             if (satisfiable2 == False):
                 if iteration_verbose: print(f"\nSecond branch returned UNSAT, current depth {depth}")
