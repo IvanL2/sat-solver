@@ -12,8 +12,6 @@ class Solver:
             print("format: node, depth")
         if (tree == None):
             return
-        if (tree.value == "start"):
-            print("start",0)
         else:
             print(tree.value.name, depth, "n/a" if not hasattr(tree, "literal") else "yes" if tree.literal else "no")
         if (isinstance(tree.value, Variable) and not isinstance(tree.value, Operator)):

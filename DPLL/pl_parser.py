@@ -5,8 +5,7 @@ from enum import Enum
 from . import verbosity_config
 
 precedence = {'¬': 5, '∧': 4, '∨': 3, '→': 2, '↔': 1}
-equiv_symbols = {" ":"","<->":"↔","=":"↔","->":"→","~":"¬","\/":"∨","/\\":"∧","&&":"∧","||":"∨","!":"¬","F":"⊥","T":"⊤"}
-internal_symbol_to_icon = {">":"→", "=":"↔", "!":"¬", "&":"∧", "|":"∨"}
+equiv_symbols = {" ":"","<->":"↔","=":"↔","->":"→","~":"¬","\\/":"∨","/\\":"∧","&&":"∧","||":"∨","!":"¬","F":"⊥","T":"⊤"}
 
 class TokenType(Enum):
     UNARY_OPERATOR = 1
@@ -162,27 +161,27 @@ class Parser:
         for x in postfix:
             if x.value == "¬":
                 node = arguments.pop()
-                tree = Tree(Operator.Negation(), left=node)
+                tree = Tree(Operator.NEGATION, left=node)
                 arguments.append(tree)
             elif x.value == "∧":
                 node1 = arguments.pop()
                 node2 = arguments.pop()
-                tree = Tree(Connective.Conjunction(), left=node2, right=node1)
+                tree = Tree(Operator.CONJUNCTION, left=node2, right=node1)
                 arguments.append(tree)
             elif x.value == "∨":
                 node1 = arguments.pop()
                 node2 = arguments.pop()
-                tree = Tree(Connective.Disjunction(), left=node2, right=node1)
+                tree = Tree(Operator.DISJUNCTION, left=node2, right=node1)
                 arguments.append(tree)
             elif x.value == "→":
                 node1 = arguments.pop()
                 node2 = arguments.pop()
-                tree = Tree(Connective.Implication(), left=node2, right=node1)
+                tree = Tree(Operator.IMPLICATION, left=node2, right=node1)
                 arguments.append(tree)
             elif x.value == "↔":
                 node1 = arguments.pop()
                 node2 = arguments.pop()
-                tree = Tree(Connective.Equivalence(), left=node2, right=node1)
+                tree = Tree(Operator.EQUIVALENCE, left=node2, right=node1)
                 arguments.append(tree)
             elif x.value == "⊤":
                 tree = Tree(Tautology())
@@ -193,11 +192,15 @@ class Parser:
             else:
                 tree = Tree(Variable(x.value))
                 arguments.append(tree)
-        final_tree = Tree("start", left=arguments.pop())
+        final_tree = arguments.pop()
         if verbose:
             print("Final tree: ", end="")
             Parser.print_exp(final_tree)
         return final_tree
+    
+    def check_no_tree_as_value(tree: Tree) -> bool:
+        if (tree == None): return True
+        return not isinstance(tree.value, Tree) and (Parser.check_no_tree_as_value(tree.left)) and (Parser.check_no_tree_as_value(tree.right))
 
         
     def tree_to_infix(tree : Tree) -> str:
@@ -212,8 +215,6 @@ class Parser:
             print("format: node, depth")
         if (tree == None):
             return
-        if (tree.value == "start"):
-            print("start",0)
         else:
             print(tree.value.name, depth)
         if (isinstance(tree.value, Variable) and not isinstance(tree.value, Operator)):
@@ -222,53 +223,32 @@ class Parser:
         Parser.print_tree(tree.right, depth + 1)
     
     def print_exp(tree: Tree, first=True):
-        if (tree.value == "start"):
-            Parser.print_exp(tree.left)
+        if tree == None:
             return
-        if not isinstance(tree.value, Connective):
-            if (tree.value.name == "!"):
+        if isinstance(tree.value, Operator):
+            if (tree.value == Operator.NEGATION):
                 print("¬", end="")
-            else:
-                print(tree.value.name, end="")
-            if tree.left != None:
                 Parser.print_exp(tree.left, first=False)
-        else:
-            print("(", end="")
-            if tree.left != None:
-                Parser.print_exp(tree.left, first=False)
-            if tree.value.name in internal_symbol_to_icon:
-                print(internal_symbol_to_icon[tree.value.name], end="")
             else:
-                print(tree.value.name, end="")
-            if (tree.right != None):
+                print("(", end="")
+                Parser.print_exp(tree.left, first=False)
+                print(str(tree.value), end="")
                 Parser.print_exp(tree.right, first=False)
-            print(")", end="")
+                print(")", end="")
+        else:
+            print(tree.value.name, end="")
         if first: print()
     
-    def print_exp_return_str(tree: Tree):
-        string = ""
-        if (tree.value == "start"):
-            Parser.print_exp_return_str(tree.left)
+    def print_exp_return_str(tree: Tree) -> str:
+        if tree == None:
             return
-        if not isinstance(tree.value, Connective):
-            if (tree.value.name == "!"):
-                string+="¬"
+        if isinstance(tree.value, Operator):
+            if (tree.value == Operator.NEGATION):
+                return "¬"+ Parser.print_exp_return_str(tree.left)
             else:
-                string+=tree.value.name
-            if tree.left != None:
-                string += Parser.print_exp_return_str(tree.left)
+                return "(" + Parser.print_exp_return_str(tree.left) + str(tree.value) + Parser.print_exp_return_str(tree.right) + ")"
         else:
-            string+="("
-            if tree.left != None:
-                string += Parser.print_exp_return_str(tree.left)
-            if tree.value.name in internal_symbol_to_icon:
-                string+=internal_symbol_to_icon[tree.value.name]
-            else:
-                string+=tree.value.name
-            if (tree.right != None):
-                string += Parser.print_exp_return_str(tree.right)
-            string+=")"
-        return string
+            return tree.value.name
 
     def get_variable_names(tree: Tree) -> Set[str]:
         if tree.left == None and tree.right == None:
