@@ -7,7 +7,7 @@ Implementations of different SAT Solving algorithms learned from my course at th
 
 #### DPLL (see dpll_example.py for example)
 ```python
-from DPLL.dpll import dpll, dpll_model
+from dpll import dpll, dpll_model
 dpll("your prop. logic expr") -> bool #(True if satisfiable, False otherwise)
 dpll_model("your prop. logic expr") -> List[Tuple[str, bool]] # The list of variables of the form (variable name, True/False)
 ```
