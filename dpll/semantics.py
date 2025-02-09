@@ -1,4 +1,9 @@
-from enum import Enum
+try:
+    from enum import StrEnum  # python >=3.11
+except ImportError:
+    from strenum import StrEnum  # python <3.11 (requires pip install)
+
+from dataclasses import dataclass
 from dpll.tree import Tree
 
 
@@ -38,43 +43,27 @@ class Semantics:
             Semantics.literal_marker(ast.right)
 
 
-class Variable():
-    def __init__(self, name):
-        self.name = name
-
-    def __str__(self):
-        return f"<Variable {self.name}>"
+@dataclass
+class Variable:
+    name: str
 
 
-class Tautology(Variable):
-    def __init__(self):
-        super().__init__("⊤")
+@dataclass
+class Tautology:
+    name: str = "⊤"
 
 
-class Contradiction(Variable):
-    def __init__(self):
-        super().__init__("⊥")
+@dataclass
+class Contradiction:
+    name: str = "⊥"
 
 
-class Operator(Enum):
-    NEGATION = 0
-    CONJUNCTION = 1
-    DISJUNCTION = 2
-    IMPLICATION = 3
-    EQUIVALENCE = 4
+Literal = Variable | Tautology | Contradiction
 
-    def __str__(self):
-        match (self):
-            case Operator.NEGATION:
-                return "¬"
-            case Operator.CONJUNCTION:
-                return "&"
-            case Operator.DISJUNCTION:
-                return "|"
-            case Operator.IMPLICATION:
-                return ">"
-            case Operator.EQUIVALENCE:
-                return "="
 
-    def __repr__(self):
-        return self.__str__()
+class Operator(StrEnum):
+    NEGATION = "¬"
+    CONJUNCTION = "&"
+    DISJUNCTION = "|"
+    IMPLICATION = ">"
+    EQUIVALENCE = "="

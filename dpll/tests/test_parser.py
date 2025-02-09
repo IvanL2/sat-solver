@@ -3,7 +3,7 @@ from dpll.parser import Token as token
 from dpll.parser import Parser as parser
 from dpll.parser import TokenType
 
-var = TokenType.VARIABLE
+var = TokenType.LITERAL
 bop = TokenType.BINARY_OPERATOR
 uop = TokenType.UNARY_OPERATOR
 lb = TokenType.START_BRACKET

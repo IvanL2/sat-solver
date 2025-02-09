@@ -19,13 +19,15 @@ example_f3 = "F\\/ a"
 example_tf = "T /\\ F"
 example_tf2 = "T\\/ F"
 example_long_nots = "¬¬a"
+example_extra_long_nots = "¬¬(a -> ¬¬b -> ¬¬¬¬¬¬(c && ¬(d || e)))"
 example_real = "!((a = b) = (a -> b))"
 example_sunny = "(sunny -> sunglasses) <-> (!sunny -> !sunglasses)"
 
 sat_cases = [
     example, example2, example3, example4, example_t, example_t2, example_f3, example_tf2,
     example_long_nots,
-    example_real, example_sunny
+    example_real, example_sunny,
+    example_extra_long_nots
 ]
 
 unsat_cases = [
