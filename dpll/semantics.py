@@ -46,16 +46,27 @@ class Semantics:
 @dataclass
 class Variable:
     name: str
-
+    def __str__(self):
+        return self.name
+    def __repr__(self):
+        return self.__str__()
 
 @dataclass
 class Tautology:
     name: str = "⊤"
+    def __str__(self):
+        return self.name
+    def __repr__(self):
+        return self.__str__()
 
 
 @dataclass
 class Contradiction:
     name: str = "⊥"
+    def __str__(self):
+        return self.name
+    def __repr__(self):
+        return self.__str__()
 
 
 Literal = Variable | Tautology | Contradiction

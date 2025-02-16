@@ -11,6 +11,7 @@ example_unsat2 = "(x\\/ x\\/ x) /\\ (¬x\\/ ¬x\\/ ¬x)"
 example_unsat3 = "(x || y || z) && (x || y || ¬z) && (x || ¬y || z) && (x || ¬y || ¬z) && (¬x || y || z) && (¬x || y || ¬x) && (¬x || ¬y || z) && (¬x || ¬y || ¬z)"
 example_unsat4 = "b /\\ c /\\ c /\\ c /\\ ¬b /\\ c"
 example_unsat5 = "¬((p → q) ∧ (p ∧ q → r ) → (p → r ))"
+example_unsat6 = "a <-> ¬a"
 example_f = "F"
 example_t = "T"
 example_t2 = "T /\\ a"
@@ -31,7 +32,7 @@ sat_cases = [
 ]
 
 unsat_cases = [
-    example_unsat1, example_unsat2, example_unsat3, example_unsat4, example_unsat5, example_f, example_f2, example_tf
+    example_unsat1, example_unsat2, example_unsat3, example_unsat4, example_unsat5, example_unsat6, example_f, example_f2, example_tf
 ]
 
 
