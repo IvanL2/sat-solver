@@ -8,6 +8,7 @@ import dpll.verbosity_config as verbosity_config
 
 
 class Transformer:
+    
     def transform(tree : Tree, verbose: bool=False) -> Set[Tree]:
         internal_verbose = verbose and verbosity_config.TRANSFORMER_SUMMARY_VERBOSE
         named_clauses = []
@@ -39,166 +40,164 @@ class Transformer:
                 Parser.print_exp(x)
         return clauses
 
-    def replace_equivs(tree: Tree, parent: Tree=None):
+    def replace_equivs(tree: Tree):
         """
         # Post-order DFS traversal, returns a transformed tree free of equivalences
         # 
         # Impossible to introduce an equivalence to a child node; so safe to post-order (to avoid big deepcopy) and not pre-order
         """
 
-        if tree is None or isinstance(tree.value, Variable):
+        if tree is None:
             return tree
+        
+        left_tree = Transformer.replace_equivs(tree.left)
+        right_tree = Transformer.replace_equivs(tree.right)
 
-        new_tree = Tree(None, parent=parent)
-        left_tree = Transformer.replace_equivs(tree.left, new_tree)
-        right_tree = Transformer.replace_equivs(tree.left, new_tree)
+        match tree.value:
+            case Operator.EQUIVALENCE:
+                negated_original_left = Tree(Operator.NEGATION, left=copy.deepcopy(left_tree))
+                negated_original_right = Tree(Operator.NEGATION, left=copy.deepcopy(right_tree))
+                not_a_v_b = Tree(Operator.DISJUNCTION, left=negated_original_left, right=right_tree)
+                a_v_not_b = Tree(Operator.DISJUNCTION, left=left_tree, right=negated_original_right)
+                new_tree = Tree(Operator.CONJUNCTION, left=not_a_v_b, right=a_v_not_b)
+                return new_tree
+            case _:
+                return Tree(tree.value, left=left_tree, right=right_tree)
 
-        if isinstance(tree.value, Operator) and tree.value == Operator.EQUIVALENCE:
-            # (A <-> B) => (¬A v B) n (A v ¬B)
-            negated_original_left = Tree(Operator.NEGATION, left=copy.deepcopy(left_tree))
-            negated_original_right = Tree(Operator.NEGATION, left=copy.deepcopy(right_tree))
-            not_a_v_b = Tree(Operator.DISJUNCTION, left=negated_original_left, right=right_tree)
-            a_v_not_b = Tree(Operator.DISJUNCTION, left=left_tree, right=negated_original_right)
-            new_tree.value = Operator.CONJUNCTION
-            new_tree.left = not_a_v_b
-            new_tree.right = a_v_not_b
-        else:
-            return tree
-
-        return new_tree
 
     
-    def replace_implics(tree: Tree, parent: Tree=None):
+    def replace_implics(tree: Tree):
         """
         # Post-order DFS traversal, returns a transformed tree free of implications
         # 
         # Impossible to introduce an implication to a child node; to safe to post-order (to avoid big deepcopy) and not pre-order
         """
         
-        if tree is None or isinstance(tree.value, Variable):
+        if tree is None:
             return tree
+        
+        left_tree = Transformer.replace_implics(tree.left)
+        right_tree = Transformer.replace_implics(tree.right)
 
-        new_tree = Tree(None, parent=parent)
-        left_tree = Transformer.replace_implics(tree.left, new_tree)
-        right_tree = Transformer.replace_implics(tree.right, new_tree)
+        match tree.value:
+            case Operator.IMPLICATION:
+                new_left = Tree(Operator.NEGATION, left=left_tree, right=copy.deepcopy(right_tree))
+                new_tree = Tree(Operator.DISJUNCTION, left=new_left, right=right_tree)
+                new_tree.value = Operator.DISJUNCTION
+                return new_tree
+            case _:
+                return Tree(tree.value, left=left_tree, right=right_tree)
 
-        if isinstance(tree.value, Operator) and tree.value == Operator.IMPLICATION:
-            # (A -> B) => (¬A v B)
-            new_left = Tree(Operator.NEGATION, parent=new_tree, left=left_tree)
-            new_tree.value = Operator.DISJUNCTION
-            new_tree.left = new_left
-            new_tree.right = right_tree
-        else:
-            return tree
-
-        return new_tree
-
-    def push_negations(tree: Tree, parent: Tree=None):
+    def push_negations(tree: Tree):
         """
         Assumes there are no <-> or ->
         Done in pre-order traversal
         """
-        if tree is None or isinstance(tree.value, Variable):
+        if tree is None:
             return tree
         
-        new_tree = Tree(None, parent=parent)
+        left_tree_value = None if (tree.left is None) else tree.left.value
 
-        if tree.value == Operator.NEGATION and isinstance(tree.left.value, Operator):
-
-            if tree.left.value == Operator.CONJUNCTION:
-                new_left = Tree(Operator.NEGATION, parent=new_tree, left=copy.deepcopy(tree.left.left))
+        match (tree.value, left_tree_value):
+            case (Operator.NEGATION, Operator.CONJUNCTION):
+                new_left = Tree(Operator.NEGATION, left=copy.deepcopy(tree.left.left))
                 new_left = Transformer.push_negations(new_left)
-                new_right = Tree(Operator.NEGATION, parent=new_tree, left=copy.deepcopy(tree.left.right))
+                new_right = Tree(Operator.NEGATION, left=copy.deepcopy(tree.left.right))
                 new_right = Transformer.push_negations(new_right)
-                new_tree.left = new_left
-                new_tree.right = new_right
-                new_tree.value = Operator.DISJUNCTION
-            
-            elif tree.left.value == Operator.DISJUNCTION:
-                new_left = Tree(Operator.NEGATION, parent=new_tree, left=copy.deepcopy(tree.left.left))
-                new_left = Transformer.push_negations(new_left)
-                new_right = Tree(Operator.NEGATION, parent=new_tree, left=copy.deepcopy(tree.left.right))
-                new_right = Transformer.push_negations(new_right)
-                new_tree.left = new_left
-                new_tree.right = new_right
-                new_tree.value = Operator.CONJUNCTION
+                new_tree = Tree(Operator.DISJUNCTION, left=new_left, right=new_right)
+                return new_tree
 
-        if (new_tree.value is None):
-            new_tree.value = tree.value
-            new_tree.left = Transformer.push_negations(tree.left)
-            new_tree.right = Transformer.push_negations(tree.right)
+            case (Operator.NEGATION, Operator.DISJUNCTION):
+                new_left = Tree(Operator.NEGATION, left=copy.deepcopy(tree.left.left))
+                new_left = Transformer.push_negations(new_left)
+                new_right = Tree(Operator.NEGATION, left=copy.deepcopy(tree.left.right))
+                new_right = Transformer.push_negations(new_right)
+                new_tree = Tree(Operator.CONJUNCTION, left=new_left, right=new_right)
+                return new_tree
+
+            case (Operator(), _):
+                new_left = Transformer.push_negations(tree.left)
+                new_right = Transformer.push_negations(tree.right)
+                new_tree = Tree(tree.value, left=new_left, right=new_right)
+                return new_tree
         
-        return new_tree
+            case _:
+                return tree
 
-    def double_neg_remove(tree: Tree, parent: Tree=None):
+    def double_neg_remove(tree: Tree):
         """
         """
-        if tree is None or isinstance(tree.value, Variable):
+        if tree is None:
             return tree
+        
+        left_tree_value = None if (tree.left is None) else tree.left.value
 
-        new_tree = Tree(tree.value, parent=parent)
-
-        if tree.value == Operator.NEGATION and tree.left.value == Operator.NEGATION:
-            return Transformer.double_neg_remove(tree.left.left, parent=new_tree)
-        else:
-            new_tree = Tree(tree.value, parent=parent)
-            new_tree.left = Transformer.double_neg_remove(tree.left, parent=new_tree)
-            new_tree.right = Transformer.double_neg_remove(tree.right, parent=new_tree)
-            return new_tree
+        match (tree.value, left_tree_value):
+            case (Operator.NEGATION, Operator.NEGATION):
+                return Transformer.double_neg_remove(tree.left.left)
+            case (Operator(), _):
+                new_left = Transformer.double_neg_remove(tree.left)
+                new_right = Transformer.double_neg_remove(tree.right)
+                new_tree = Tree(tree.value, left=new_left, right=new_right)
+                return new_tree
+            case _:
+                return tree
     
-    def dnf_to_cnf(tree: Tree, parent: Tree=None):
+    def dnf_to_cnf(tree: Tree):
         """
         
         """
-        if tree is None or isinstance(tree.value, Variable):
-            return tree
-        
-        if tree.value == Operator.NEGATION: # By this time, negations only on literals
+        if tree is None:
             return tree
 
-        new_tree = Tree(tree.value)
-        new_tree.left = tree.left # default to old left/right
-        new_tree.right = tree.right
+        left_tree = Transformer.dnf_to_cnf(tree.left)
+        right_tree = Transformer.dnf_to_cnf(tree.right)
 
-        if tree.value == Operator.DISJUNCTION:
-            if isinstance(tree.left.value, Operator) and (tree.left.value == Operator.CONJUNCTION) and isinstance(tree.right.value, Operator) and (tree.right.value == Operator.CONJUNCTION):
+        left_tree_value = None if (left_tree is None) else left_tree.value
+        right_tree_value = None if (right_tree is None) else right_tree.value
+
+        match (tree.value, left_tree_value, right_tree_value):
+            case (Operator.NEGATION, _, _):
+                return tree
+            case (Operator.DISJUNCTION, Operator.CONJUNCTION, Operator.CONJUNCTION):
                 #(A n B) v (C n D) => [(A v C) n (A v D)] n [(B v C) n (B v D)]
-                new_tree.value = Operator.CONJUNCTION
-                left  = Tree(Operator.CONJUNCTION, parent=new_tree, left=None, right=None)
-                right = Tree(Operator.CONJUNCTION, parent=new_tree, left=None, right=None)
-                a_v_c = Tree(Operator.DISJUNCTION, parent=left, left=copy.deepcopy(tree.left.left), right=copy.deepcopy(tree.right.left))
-                a_v_d = Tree(Operator.DISJUNCTION, parent=left, left=copy.deepcopy(tree.left.left), right=copy.deepcopy(tree.right.right))
-                b_v_c = Tree(Operator.DISJUNCTION, parent=right, left=copy.deepcopy(tree.left.right), right=copy.deepcopy(tree.right.left))
-                b_v_d = Tree(Operator.DISJUNCTION, parent=right, left=copy.deepcopy(tree.left.right), right=copy.deepcopy(tree.right.right))
-                left.left = a_v_c
-                left.right = a_v_d
-                right.left = b_v_c
-                right.right = b_v_d
-            elif isinstance(tree.left.value, Operator) and tree.left.value == Operator.CONJUNCTION:
+                right = Tree(Operator.CONJUNCTION,  left=None, right=None)
+                a_v_c = Tree(Operator.DISJUNCTION, left=left_tree.left, right=right_tree.left)
+                a_v_d = Tree(Operator.DISJUNCTION, left=left_tree.left, right=right_tree.right)
+                b_v_c = Tree(Operator.DISJUNCTION, left=left_tree.right, right=right_tree.left)
+                b_v_d = Tree(Operator.DISJUNCTION, left=left_tree.right, right=right_tree.right)
+                left = Tree(Operator.CONJUNCTION, left=a_v_c, right=a_v_d)
+                right = Tree(Operator.CONJUNCTION, left=b_v_c, right=b_v_d)
+                new_tree = Tree(Operator.CONJUNCTION, left=left, right=right)
+                return Transformer.dnf_to_cnf(new_tree)
+            case (Operator.DISJUNCTION, Operator.CONJUNCTION, _):
                 # CNF within DNF detected
                 # (A n B) v C => (A v C) n (B v C)
-                new_tree.value = Operator.CONJUNCTION
-                new_tree.left = Tree(Operator.DISJUNCTION, left=copy.deepcopy(tree.left.left), right=copy.deepcopy(tree.right))
-                new_tree.right = Tree(Operator.DISJUNCTION, left=copy.deepcopy(tree.left.right), right=copy.deepcopy(tree.right))
-            elif isinstance(tree.right.value, Operator) and tree.right.value == Operator.CONJUNCTION:
-                # CNF within DNF detected
-                # A v (B n C) => (A v B) n (A v C)
-                new_tree.value = Operator.CONJUNCTION
-                new_tree.left = Tree(Operator.DISJUNCTION, left=copy.deepcopy(tree.left), right=copy.deepcopy(tree.right.left))
-                new_tree.right = Tree(Operator.DISJUNCTION, left=copy.deepcopy(tree.left), right=copy.deepcopy(tree.right.right))
-
-        new_tree.left = Transformer.dnf_to_cnf(new_tree.left)
-        new_tree.right = Transformer.dnf_to_cnf(new_tree.right)
-
-        return new_tree
-
+                new_left = Tree(Operator.DISJUNCTION, left=left_tree.left, right=copy.deepcopy(tree.right))
+                new_right = Tree(Operator.DISJUNCTION, left=left_tree.right, right=copy.deepcopy(tree.right))
+                new_tree = Tree(Operator.CONJUNCTION, left=new_left, right=new_right)
+                return Transformer.dnf_to_cnf(new_tree)
+            case (Operator.DISJUNCTION, _, Operator.CONJUNCTION):
+                new_left = Tree(Operator.DISJUNCTION, left=copy.deepcopy(tree.left), right=right_tree.left)
+                new_right = Tree(Operator.DISJUNCTION, left=copy.deepcopy(tree.left), right=right_tree.right)
+                new_tree = Tree(Operator.CONJUNCTION, left=new_left, right=new_right)
+                return Transformer.dnf_to_cnf(new_tree)
+            case (Operator(), _, _):
+                return Tree(tree.value, left_tree, right_tree)
+            case _:
+                return Tree(tree.value)
     
     def split_conjunctions(tree: Tree, clauses: Set[Tree]):
-        if isinstance(tree.value, Operator) and tree.value == Operator.CONJUNCTION:
-            Transformer.split_conjunctions(tree.left, clauses)
-            Transformer.split_conjunctions(tree.right, clauses)
-        else:
-            clauses.add(tree)
+
+        if tree is None:
+            return tree
+
+        match tree.value:
+            case Operator.CONJUNCTION:
+                Transformer.split_conjunctions(tree.left, clauses)
+                Transformer.split_conjunctions(tree.right, clauses)
+            case _:
+                clauses.add(tree)
 
     def generate_clauses(tree : Tree, clauses: Set[Tree], verbose: bool=False):
         """
@@ -234,6 +233,8 @@ class Transformer:
             print(f"After DNF to CNF (FINAL):", end=" ")
             Parser.print_exp(new_tree)
         Transformer.split_conjunctions(new_tree, clauses)
+        if verbose:
+            print(f"After splitting into clauses: {clauses}", end = " ")
 
     def get_names(tree: Tree, names: set):
         if tree.left is not None:
@@ -247,29 +248,33 @@ class Transformer:
     # IMPORTANT: We assume tseytin transformation has been applied already,
     #            such that at most there is one embedded equivalence
     def naming(tree: Tree, clauses: list, set_of_names: set, current_fresh_num: List[int]=[0]) -> int:
-        if tree is None or isinstance(tree, Variable):
+        if tree is None:
             return
 
         Transformer.naming(tree.left, clauses, set_of_names, current_fresh_num)
         Transformer.naming(tree.right, clauses, set_of_names, current_fresh_num)
 
-        if isinstance(tree.value, Operator) and tree.value != Operator.NEGATION:
-            # Hacky way to generate fresh variable
-            newvar = Variable("n"+str(current_fresh_num[0]))
+        match tree.value:
+            case (Operator.NEGATION):
+                return
+            case Operator():
+                # Hacky way to generate fresh variable
+                newvar = Variable("n"+str(current_fresh_num[0]))
+                if tree.pol == 1:
+                    clauses.append(Tree(Operator.IMPLICATION,left=Tree(newvar),right=copy.deepcopy(tree)))
+                elif tree.pol == 0:
+                    clauses.append(Tree(Operator.EQUIVALENCE,left=Tree(newvar),right=copy.deepcopy(tree)))
+                elif tree.pol == -1:
+                    clauses.append(Tree(Operator.IMPLICATION,left=copy.deepcopy(tree),right=Tree(newvar)))
+                else:
+                    print("ERROR")
+                    raise RuntimeError()
 
-            if tree.pol == 1:
-                clauses.append(Tree(Operator.IMPLICATION,left=Tree(newvar),right=copy.deepcopy(tree)))
-            elif tree.pol == 0:
-                clauses.append(Tree(Operator.EQUIVALENCE,left=Tree(newvar),right=copy.deepcopy(tree)))
-            elif tree.pol == -1:
-                clauses.append(Tree(Operator.IMPLICATION,left=copy.deepcopy(tree),right=Tree(newvar)))
-            else:
-                print("ERROR")
-                raise RuntimeError()
+                # Update current node
+                tree.value = newvar
+                tree.left = None
+                tree.right = None
 
-            # Update current node
-            tree.value = newvar
-            tree.left = None
-            tree.right = None
-
-            current_fresh_num[0] += 1
+                current_fresh_num[0] += 1
+            case _:
+                return

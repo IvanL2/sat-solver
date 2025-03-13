@@ -11,6 +11,7 @@ example_unsat2 = "(x\\/ x\\/ x) /\\ (¬x\\/ ¬x\\/ ¬x)"
 example_unsat3 = "(x || y || z) && (x || y || ¬z) && (x || ¬y || z) && (x || ¬y || ¬z) && (¬x || y || z) && (¬x || y || ¬x) && (¬x || ¬y || z) && (¬x || ¬y || ¬z)"
 example_unsat4 = "b /\\ c /\\ c /\\ c /\\ ¬b /\\ c"
 example_unsat5 = "¬((p → q) ∧ (p ∧ q → r ) → (p → r ))"
+example_unsat6 = "a <-> ¬a"
 example_f = "F"
 example_t = "T"
 example_t2 = "T /\\ a"
@@ -19,17 +20,19 @@ example_f3 = "F\\/ a"
 example_tf = "T /\\ F"
 example_tf2 = "T\\/ F"
 example_long_nots = "¬¬a"
+example_extra_long_nots = "¬¬(a -> ¬¬b -> ¬¬¬¬¬¬(c && ¬(d || e)))"
 example_real = "!((a = b) = (a -> b))"
 example_sunny = "(sunny -> sunglasses) <-> (!sunny -> !sunglasses)"
 
 sat_cases = [
     example, example2, example3, example4, example_t, example_t2, example_f3, example_tf2,
     example_long_nots,
-    example_real, example_sunny
+    example_real, example_sunny,
+    example_extra_long_nots
 ]
 
 unsat_cases = [
-    example_unsat1, example_unsat2, example_unsat3, example_unsat4, example_unsat5, example_f, example_f2, example_tf
+    example_unsat1, example_unsat2, example_unsat3, example_unsat4, example_unsat5, example_unsat6, example_f, example_f2, example_tf
 ]
 
 

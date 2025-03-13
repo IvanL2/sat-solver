@@ -17,7 +17,7 @@ equiv_symbols = {" ": "", "<->": "↔", "=": "↔", "->": "→", "~": "¬", "\\/
 class TokenType(Enum):
     UNARY_OPERATOR = 1
     BINARY_OPERATOR = 2
-    VARIABLE = 3
+    LITERAL = 3
     START_BRACKET = 4
     END_BRACKET = 5
     EXPR = 6
@@ -42,7 +42,7 @@ class Token():
         return Token(value, TokenType.UNARY_OPERATOR)
 
     def Var(value: str):
-        return Token(value, TokenType.VARIABLE)
+        return Token(value, TokenType.LITERAL)
 
     def StartBracket():
         return Token('(', TokenType.START_BRACKET)
@@ -55,7 +55,7 @@ grammar = [[TokenType.START, [TokenType.EXPR]],
            [TokenType.EXPR, [TokenType.EXPR, TokenType.BINARY_OPERATOR, TokenType.EXPR]],
            [TokenType.EXPR, [TokenType.UNARY_OPERATOR, TokenType.EXPR]],
            [TokenType.EXPR, [TokenType.START_BRACKET, TokenType.EXPR, TokenType.END_BRACKET]],
-           [TokenType.EXPR, [TokenType.VARIABLE]]]
+           [TokenType.EXPR, [TokenType.LITERAL]]]
 
 
 class Parser:
@@ -194,10 +194,10 @@ class Parser:
                 tree = Tree(Operator.EQUIVALENCE, left=node2, right=node1)
                 arguments.append(tree)
             elif x.value == "⊤":
-                tree = Tree(Tautology())
+                tree = Tree(Tautology)
                 arguments.append(tree)
             elif x.value == "⊥":
-                tree = Tree(Contradiction())
+                tree = Tree(Contradiction)
                 arguments.append(tree)
             else:
                 tree = Tree(Variable(x.value))
@@ -310,7 +310,7 @@ class Conversion:
     # A utility function to check is the given character
     # is operand
     def isOperand(self, ch: Token):
-        return ch.type == TokenType.VARIABLE
+        return ch.type == TokenType.LITERAL
 
     # Check if the precedence of operator is strictly
     # less than top of stack or not
