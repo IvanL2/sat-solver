@@ -3,7 +3,7 @@ from dpll.parser import Token as token
 from dpll.parser import Parser as parser
 from dpll.parser import TokenType
 
-var = TokenType.LITERAL
+var = TokenType.ATOM
 bop = TokenType.BINARY_OPERATOR
 uop = TokenType.UNARY_OPERATOR
 lb = TokenType.START_BRACKET
@@ -95,7 +95,7 @@ def test_lexer():
     bad_operators = ["a >> b", "a << b", "a <> b", "a ->> b", "a <<-> b"]
     for x in bad_operators:
         with pytest.raises(SyntaxError):
-            parser.lexer(x)
+            _ = parser.lexer(x)
 
     test_case = parser.lexer("(a)")
     assert len(test_case) == 3
@@ -115,7 +115,7 @@ def test_syntax_check():
                   "¬(a<->b)", "¬¬¬(a->b->c/\\d)<->(e\\/a)"]
 
     for test_case in test_cases:
-        assert parser.syntax_check(parser.lexer(test_case))
+        assert parser.syntax_check(parser.lexer(test_case)), f"Failure: {test_case}"
 
     bad_test_cases = ["", " ", "()"  # Empty cases
                       "(a ->)", "(a", "a <-> b)", "((a -> b) -> c))"  # Mismatched brackets case

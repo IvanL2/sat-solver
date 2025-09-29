@@ -1,10 +1,9 @@
 # Tests only the solver; not the transformer
 
-from typing import List
 from dpll.solver import Solver, SolverClause, SolverVariable
 
 
-def dimacs_cnf_to_clauses(file: str) -> List[SolverClause]:
+def dimacs_cnf_to_clauses(file: str) -> list[SolverClause]:
     """Small helper methods to parse test cases from online source"""
     clauses = []
 

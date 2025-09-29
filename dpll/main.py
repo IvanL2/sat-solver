@@ -1,44 +1,29 @@
-from typing import Tuple, List
 from dpll.cnf_transformer import Transformer
+from dpll.logic_tree import LogicTree
 from dpll.parser import Parser
 from dpll.solver import Solver, SolverVariable
 
 
-def dpll(exp: str, verbose: bool = False) -> bool:
+def dpll(exp: str) -> bool:
     """Returns True if the given expression is satisfiable, False if unsatisfiable."""
 
-    if verbose:
-        print("=========== PARSER START ===========")
-    parsed = Parser.parse(exp, verbose)
+    parsed = Parser.parse(exp)
 
-    if verbose:
-        print("========== TRANSFORM START ==========")
-    clauses = Transformer.transform(parsed, verbose)
+    clauses = Transformer.transform(parsed)
 
-    if verbose:
-        print("========== SOLVER START ==========")
-    return (Solver.solve(clauses, verbose)).satisfiable
+    return (Solver.solve(clauses)).satisfiable
 
 
-def dpll_model(exp: str, verbose: bool = False) -> List[SolverVariable]:
+def dpll_model(exp: str) -> list[SolverVariable] | None:
     """Returns a (maybe partial) model if satisfiable, None if unsatisfiable.
     This means that it may return an empty list [], if the given expression is a tautology."""
 
-    if verbose:
-        print("========== PARSER START ==========")
+    parsed = Parser.parse(exp)
+    original_vars = LogicTree.get_var_names(parsed)
 
-    parsed = Parser.parse(exp, verbose)
-    original_vars = Parser.get_variable_names(parsed)
+    clauses = Transformer.transform(parsed)
 
-    if verbose:
-        print("========== TRANSFORM START ==========")
-
-    clauses = Transformer.transform(parsed, verbose)
-
-    if verbose:
-        print("========== SOLVER START ==========")
-
-    solution = Solver.solve(clauses, verbose)
+    solution = Solver.solve(clauses)
     if solution.satisfiable:
         model_with_names = solution.model
 
@@ -54,25 +39,23 @@ def dpll_valid(expr: str, verbose: bool = False) -> bool:
     formula = f"¬({expr})"
     if verbose:
         print(f"Check if {formula} is UNSAT")
-    return not dpll(formula, verbose=verbose)
+    return not dpll(formula)
 
 
-def dpll_valid_with_cex(expr: str, verbose: bool = False) -> List[Tuple[str, bool]]:
+def dpll_valid_with_cex(expr: str, verbose: bool = False) -> list[SolverVariable] | None:
     formula = f"¬({expr})"
     if verbose:
         print(f"Check if {formula} is UNSAT")
-    return dpll_model(formula, verbose=verbose)
+    return dpll_model(formula)
 
 
 def dpll_equiv(expr1: str, expr2: str, verbose: bool = False) -> bool:
     formula = f"¬(({expr1}) = ({expr2}))"
     if verbose:
         print(f"Check if {formula} is UNSAT")
-    return not dpll(formula, verbose=verbose)
+    return not dpll(formula)
 
 
-def dpll_equiv_with_cex(expr1: str, expr2: str, verbose: bool = False) -> List[Tuple[str, bool]]:
+def dpll_equiv_with_cex(expr1: str, expr2: str) -> list[SolverVariable] | None:
     formula = f"¬(({expr1}) = ({expr2}))"
-    if verbose:
-        print(f"Check if {formula} is UNSAT")
-    return dpll_model(formula, verbose=verbose)
+    return dpll_model(formula)
