@@ -1,87 +1,46 @@
-try:
-    from enum import StrEnum  # python >=3.11
-except ImportError:
-    from strenum import StrEnum  # python <3.11 (requires pip install)
-
-from dataclasses import dataclass
-from dpll.tree import Tree
+from dpll.logic_tree import LogicTree
+from dpll.types import Variable, Operator, Tautology, Contradiction
 
 
 class Semantics:
-    def polarise(node: Tree, pol: int = 1) -> Tree:
+
+    @staticmethod
+    def polarise(node: LogicTree | None, pol: int = 1) -> None:
         """Adds polarity information for sake of optimising definitional transforms"""
+        if node is None:
+            return None
         node.pol = pol
-        if isinstance(node.value, Operator):
-            if node.value == Operator.CONJUNCTION or node.value == Operator.DISJUNCTION:
+        match node.value:
+            case Operator.CONJUNCTION | Operator.DISJUNCTION:
                 Semantics.polarise(node.left, pol=pol)
                 Semantics.polarise(node.right, pol=pol)
-            elif node.value == Operator.NEGATION:
+            case Operator.NEGATION:
                 Semantics.polarise(node.left, pol=-pol)
-            elif node.value == Operator.IMPLICATION:
-                Semantics.polarise(node.left, pol=-pol)
-                Semantics.polarise(node.right, pol=pol)
-            elif node.value == Operator.EQUIVALENCE:
+            case Operator.EQUIVALENCE:
                 Semantics.polarise(node.left, pol=0)
                 Semantics.polarise(node.right, pol=0)
-        else:
-            return None
+            case _:
+                return None
 
-    def literal_marker(ast: Tree):
+    @staticmethod
+    def literal_marker(ast: LogicTree | None, assume_cnf: bool = True):
         """Adds a field to each AST node, marking if the node represents a literal"""
-        # If not a negation (must be disj)
-        if isinstance(ast.value, Operator) and ast.value != Operator.NEGATION:
-            ast.literal = False  # then clearly not a literal
-        elif not isinstance(ast.value, Operator):  # If variable then clearly literal
-            ast.literal = True
-            return
-        else:
-            ast.literal = True
-            return
+        if ast is None:
+            return None
+        match ast.value:
+            case Operator.NEGATION:
+                if assume_cnf:
+                    ast.literal = True
+                    return
+                if ast.left is None:
+                    raise RuntimeError("impossible case; negation cannot be empty")
+                ast.literal = not isinstance(ast.left.value, Operator)  # is var
+            case Variable(_) | Tautology(_) | Contradiction(_):
+                ast.literal = True
+                return
+            case _:
+                ast.literal = False
         if ast.left is not None:
             Semantics.literal_marker(ast.left)
         if ast.right is not None:
             Semantics.literal_marker(ast.right)
-
-
-@dataclass
-class Variable:
-    name: str
-
-    def __str__(self):
-        return self.name
-
-    def __repr__(self):
-        return self.__str__()
-
-
-@dataclass
-class Tautology:
-    name: str = "⊤"
-
-    def __str__(self):
-        return self.name
-
-    def __repr__(self):
-        return self.__str__()
-
-
-@dataclass
-class Contradiction:
-    name: str = "⊥"
-
-    def __str__(self):
-        return self.name
-
-    def __repr__(self):
-        return self.__str__()
-
-
-Literal = Variable | Tautology | Contradiction
-
-
-class Operator(StrEnum):
-    NEGATION = "¬"
-    CONJUNCTION = "&"
-    DISJUNCTION = "|"
-    IMPLICATION = ">"
-    EQUIVALENCE = "="

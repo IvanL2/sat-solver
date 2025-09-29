@@ -2,6 +2,6 @@
 extend-ignore = E501
 exclude =
 	sudoku.py,
-	cnf_*.py,
 	dpll_example.py,
 	__pycache__
+        .venv

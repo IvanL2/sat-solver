@@ -1,10 +1,9 @@
 import copy
-from typing import Set, List, NamedTuple, Tuple
+import logging
+from typing import NamedTuple, Final
 
-from dpll.semantics import Semantics, Variable, Operator
-from dpll.parser import Parser
-from dpll.tree import Tree
-import dpll.verbosity_config as verbosity_config
+from dpll.types import Operator
+from dpll.logic_tree import LogicTree
 
 
 class SolverVariable(NamedTuple):
@@ -22,7 +21,7 @@ class SolverVariable(NamedTuple):
 class SolverResult(NamedTuple):
     """For sake of readability at top-level, name the fields"""
     satisfiable: bool
-    model: List[SolverVariable]
+    model: list[SolverVariable]
 
 
 SolverClause = set[SolverVariable]
@@ -31,55 +30,49 @@ SolverClause = set[SolverVariable]
 class Solver:
     """Implements (a naive version) of the DPLL algorithm"""
 
-    taut_true_lit = SolverVariable("⊤", True)
-    taut_false_lit = SolverVariable("⊤", False)
-    contra_true_lit = SolverVariable("⊥", True)
-    contra_false_lit = SolverVariable("⊥", False)
+    _logger = logging.getLogger(f"{__name__}")
+    taut_true_lit: Final = SolverVariable("⊤", True)
+    taut_false_lit: Final = SolverVariable("⊤", False)
+    contra_true_lit: Final = SolverVariable("⊥", True)
+    contra_false_lit: Final = SolverVariable("⊥", False)
 
-    def print_tree_with_literal(tree: Tree, depth: int = 0):
-        """Takes an AST from the transformer"""
-        if depth == 0:
-            print("format: node, depth")
-        if tree is None:
-            return
-        else:
-            print(tree.value.name, depth, "n/a" if not hasattr(tree, "literal") else "yes" if tree.literal else "no")
-        if (isinstance(tree.value, Variable) and not isinstance(tree.value, Operator)):
-            return
-        Solver.print_tree_with_literal(tree.left, depth + 1)
-        Solver.print_tree_with_literal(tree.right, depth + 1)
-
-    def get_literals(tree: Tree) -> List[Tree]:
-        literals = []
+    @staticmethod
+    def _get_literals(tree: LogicTree) -> list[LogicTree]:
+        literals: list[LogicTree] = []
         if tree.literal:
             literals.append(tree)
             return literals
         if tree.left is not None:
-            literals += (Solver.get_literals(tree.left))
+            literals += (Solver._get_literals(tree.left))
         if tree.right is not None:
-            literals += (Solver.get_literals(tree.right))
+            literals += (Solver._get_literals(tree.right))
         return literals
 
-    def transform_to_variables(tree: Tree, verbose: bool = False) -> Set[SolverVariable]:
+    @staticmethod
+    def _transform_to_variables(tree: LogicTree) -> set[SolverVariable]:
         """Takes abstract syntax tree from previous steps; now in CNF so just split into tuples"""
-        Semantics.literal_marker(tree)  # Depth-first search of a tree, marking the top node of a literal
-        tree_literals = Solver.get_literals(tree)  # Collect
-        if verbose:
-            print(f"Literals of {Parser.print_exp_return_str(tree)}:", " ".join([Parser.print_exp_return_str(x) for x in tree_literals]))
+        tree_literals = Solver._get_literals(tree)  # Collect
+
+        Solver._logger.debug(f"Literals of {str(tree)}: {str(tree_literals)}")
+
         vars = SolverClause()
         for x in tree_literals:
-            if isinstance(x.value, Operator):  # At this point, only operator is negation
+            if x.value is Operator.NEGATION:  # At this point, only operator is negation
+                assert x.left is not None
                 vars.add(SolverVariable(x.left.value.name, False))
-            else:
+            elif type(x.value) is not Operator:
                 vars.add(SolverVariable(x.value.name, True))
+            else:
+                assert False, "Found non-literal operator in set of literals"
         return vars
 
-    def propagate(clauses: list) -> Tuple[List[SolverClause], List[SolverVariable]]:
+    @staticmethod
+    def propagate(clauses: list[SolverClause]) -> list[SolverVariable]:
         """DPLL unit propagation """
         new_clauses = copy.deepcopy(clauses)
 
-        unit_clauses = [clause for clause in clauses if len(clause) == 1]
-        model = []
+        unit_clauses: list[SolverClause] = [clause for clause in clauses if len(clause) == 1]
+        model: list[SolverVariable] = []
 
         while unit_clauses:
             literal = next(iter(unit_clauses[0]))
@@ -90,6 +83,7 @@ class Solver:
 
             for c in new_clauses:
                 if negated_literal in c:
+                    Solver._logger.debug(f"Removing literal {negated_literal} from clause {c}")
                     c.remove(negated_literal)
 
             unit_clauses = unit_clauses = [clause for clause in new_clauses if len(clause) == 1]
@@ -97,8 +91,9 @@ class Solver:
         clauses[:] = new_clauses
         return model
 
-    def pure_literal_elim(clauses: List[SolverClause]) -> List[SolverVariable]:
-        var_occurrences = {}
+    @staticmethod
+    def pure_literal_elim(clauses: list[SolverClause]) -> list[SolverVariable]:
+        var_occurrences: dict[str, dict[bool, bool]] = {}
 
         # "Count" occurrences of positive and negative literals; store as bool because we only
         # care "count > 0" in the context of pure lits
@@ -108,7 +103,7 @@ class Solver:
                     var_occurrences[var.name] = {True: False, False: False}
                 var_occurrences[var.name][var.polarity] = True
 
-        pure_literals = []
+        pure_literals: list[SolverVariable] = []
 
         # Needs profiling; may store original variable to avoid reconstructing
         for var_name, counts in var_occurrences.items():
@@ -118,7 +113,7 @@ class Solver:
                 pure_literals.append(SolverVariable(var_name, True))
 
         # Remove clauses containing pure literals and simplify remaining clauses
-        new_clauses = []
+        new_clauses: list[SolverClause] = []
         for clause in clauses:
             if not any(pure in clause for pure in pure_literals):  # If not pure lit
                 new_clauses.append(clause)
@@ -126,39 +121,41 @@ class Solver:
         clauses[:] = new_clauses  # Modify the original clauses list in-place
         return pure_literals
 
-    def taut_elim(clauses: list) -> List[SolverVariable]:
-        new_clauses = []
+    @staticmethod
+    def taut_elim(clauses: list[SolverClause]):
+        new_clauses: list[SolverClause] = []
         for clause in clauses:
-            if not(Solver.taut_true_lit in clause or Solver.contra_false_lit in clause):
+            if not (Solver.taut_true_lit in clause or Solver.contra_false_lit in clause):
                 new_clauses.append(clause)
         clauses[:] = new_clauses
 
-    def contra_elim(clauses: list):
+    @staticmethod
+    def contra_elim(clauses: list[SolverClause]):
         for clause in clauses:
             if Solver.contra_true_lit in clause:
                 clause.remove(Solver.contra_true_lit)
             if Solver.taut_false_lit in clause:
                 clause.remove(Solver.taut_false_lit)
 
-    def get_unique_names(clauses: list) -> Set[str]:
-        uniques = SolverClause()
-        for x in clauses:
-            for y in x:
-                uniques.add(y)
-        return uniques
+    # @staticmethod
+    # def get_unique_names(clauses: list[SolverClause]) -> set[str]:
+    #     uniques = SolverClause()
+    #     for x in clauses:
+    #         for y in x:
+    #             uniques.add(y)
+    #     return uniques
 
     # Future TODO: use two watched literals algorithm to optimise backtracking
-    def dpll(clauses: list, enable_pure_lit_elim: bool = False, verbose: bool = False, depth: int = 0) -> SolverResult:
-        model = []
+    @staticmethod
+    def dpll(clauses: list[SolverClause], enable_pure_lit_elim: bool = False, depth: int = 0) -> SolverResult:
+        model: list[SolverVariable] = []
         new_clauses = copy.deepcopy(clauses)
 
         if (enable_pure_lit_elim):
             model += Solver.pure_literal_elim(new_clauses)
         Solver.taut_elim(new_clauses)
 
-        internal_verbose = verbose and verbosity_config.SOLVER_VERBOSE
-        if internal_verbose:
-            print(f"Current depth {depth}")
+        Solver._logger.debug(f"Current depth {depth}, clauses: {clauses}")
 
         model += Solver.propagate(new_clauses)
 
@@ -166,7 +163,7 @@ class Solver:
             ret_val = SolverResult(True, model)
             return ret_val
         elif set() in new_clauses:
-            ret_val = SolverResult(False, None)
+            ret_val = SolverResult(False, [])
             return ret_val
 
         var = next(iter(new_clauses[0]))
@@ -174,7 +171,7 @@ class Solver:
         new_clauses_with_not_var = copy.deepcopy(new_clauses)
 
         not_var = SolverVariable(var.name, not var.polarity)
-        newset = set()
+        newset: SolverClause = SolverClause()
         newset.add(var)
         new_clauses.append(newset)
 
@@ -182,25 +179,26 @@ class Solver:
         newset.add(not_var)
         new_clauses_with_not_var.append(newset)
 
-        (satisfiable, new_model) = Solver.dpll(new_clauses, verbose=internal_verbose, depth=depth+1)
+        (satisfiable, new_model) = Solver.dpll(new_clauses, depth=depth+1)
         if (satisfiable):
             model += new_model
             return SolverResult(True, model)
         else:
-            (satisfiable2, new_model_2) = Solver.dpll(new_clauses_with_not_var, verbose=internal_verbose, depth=depth+1)
+            (satisfiable2, new_model_2) = Solver.dpll(new_clauses_with_not_var, depth=depth+1)
             if (satisfiable2 is False):
-                return SolverResult(False, None)
+                return SolverResult(False, [])
             else:
                 model += new_model_2
                 return SolverResult(True, model)
 
-    def solve(old_clauses: Set[Tree], verbose: bool = False) -> SolverResult:
+    @staticmethod
+    def solve(old_clauses: set[LogicTree]) -> SolverResult:
         """Returns a tuple in the form (True/False if Satisfiable/Unsat, [list of variables that form the model if sat, else None])"""
-        clauses = list()
+        clauses: list[SolverClause] = list()
         # unique_var_names = set()
         for x in old_clauses:
-            vars = Solver.transform_to_variables(x, verbose=verbose and verbosity_config.SOLVER_VERBOSE)
+            vars: set[SolverVariable] = Solver._transform_to_variables(x)
             clauses.append(vars)
 
         Solver.contra_elim(clauses)  # Didn't check for Bottom in parser/transformer, so do it now.
-        return Solver.dpll(clauses, verbose=verbose and verbosity_config.SOLVER_VERBOSE)
+        return Solver.dpll(clauses)
